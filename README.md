@@ -134,7 +134,3 @@ DocForge is the only tool that is simultaneously version-aware, works on any lib
 ## Setup & Development
 
 See [setup.md](setup.md) for installation instructions and [CONTRIBUTING.md](CONTRIBUTING.md) to contribute.
-
-## License
-
-MIT
