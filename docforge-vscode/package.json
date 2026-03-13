@@ -1,18 +1,104 @@
 {
-  "name": "docforge-vscode",
+  "name": "docforge",
+  "displayName": "DocForge",
+  "description": "Turn any library's documentation into a prompt-ready .context.md file, pinned to the exact version you're using.",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "publisher": "docforge",
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/docforge/docforge-vscode"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "AI",
+    "Snippets"
+  ],
+  "keywords": [
+    "ai",
+    "documentation",
+    "context",
+    "llm",
+    "copilot",
+    "cursor"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "docforge.generateContext",
+        "title": "DocForge: Generate Context File"
+      },
+      {
+        "command": "docforge.generateFromSelection",
+        "title": "DocForge: Generate Context for Selected Package"
+      },
+      {
+        "command": "docforge.updateContext",
+        "title": "DocForge: Update Existing Context"
+      },
+      {
+        "command": "docforge.detectDependencies",
+        "title": "DocForge: Detect from package.json"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "docforge.generateFromSelection",
+          "when": "editorHasSelection",
+          "group": "docforge"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "DocForge",
+      "properties": {
+        "docforge.backendUrl": {
+          "type": "string",
+          "default": "https://api.docforge.dev",
+          "description": "DocForge backend URL. Change to http://localhost:8000 for local development."
+        },
+        "docforge.outputPath": {
+          "type": "string",
+          "default": ".context.md",
+          "description": "Path relative to workspace root where context file is written."
+        },
+        "docforge.autoOpenFile": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically open the generated context file after creation."
+        },
+        "docforge.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your DocForge API key (required for enterprise features)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "lint": "eslint src --ext ts"
+  },
   "devDependencies": {
-    "@types/node": "^25.5.0",
-    "@types/vscode": "^1.110.0",
-    "typescript": "^5.9.3"
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vscode/test-electron": "^2.3.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.4.0"
   }
 }
