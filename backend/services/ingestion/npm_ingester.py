@@ -134,25 +134,39 @@ async def crawl_static_docs(url: str, max_pages: int = 10) -> str:
 # ---------------------------------------------------------------------------
 
 def _parse_npm_input(package_input: str) -> tuple[str, str]:
-    """Handle both 'pkg@version' and '@scope/pkg@version' forms."""
+    """Handle both 'pkg@version' and '@scope/pkg@version' forms.
+
+    Strips surrounding quotes/whitespace and semver range prefixes so raw
+    package.json values like '@emotion/styled": "^11.14.0' are handled cleanly.
+    """
+    package_input = package_input.strip().strip("\"'")
+
     if package_input.startswith("@"):
-        # Scoped package: @scope/name or @scope/name@version
-        # Split on the last '@'
-        at_count = package_input.count("@")
-        if at_count >= 2:
-            last_at = package_input.rfind("@")
-            name = package_input[:last_at]
-            version = package_input[last_at + 1:]
+        # Scoped package: extract @scope/name, then optionally @version
+        m = re.match(r'^(@[A-Za-z0-9._-]+/[A-Za-z0-9._-]+)(?:@([^\s"\':]*))?', package_input)
+        if m:
+            name = m.group(1)
+            raw_version = m.group(2) or ""
         else:
-            name = package_input
-            version = "latest"
+            # Fallback: split on last '@' if there are two or more
+            at_count = package_input.count("@")
+            if at_count >= 2:
+                last_at = package_input.rfind("@")
+                name = package_input[:last_at]
+                raw_version = package_input[last_at + 1:]
+            else:
+                name = package_input
+                raw_version = ""
     else:
         if "@" in package_input:
-            name, version = package_input.rsplit("@", 1)
+            name, raw_version = package_input.rsplit("@", 1)
         else:
             name = package_input
-            version = "latest"
-    return name, version
+            raw_version = ""
+
+    # Strip semver range prefixes (^, ~, >=, <=, >, <, =) from version
+    version = re.sub(r"^[^0-9]*", "", raw_version.strip().strip("\"'")) or "latest"
+    return name.strip(), version
 
 
 def _extract_github_pages(data: dict) -> str | None:

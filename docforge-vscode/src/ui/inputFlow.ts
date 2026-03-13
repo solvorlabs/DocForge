@@ -125,14 +125,26 @@ export async function runInputFlow(): Promise<ContextRequest | undefined> {
 export async function runInputFlowFromSelection(
   selectedText: string
 ): Promise<ContextRequest | undefined> {
-  // Try to guess whether it looks like a scoped npm package, pypi, etc.
-  const isNpm =
-    selectedText.startsWith("@") ||
-    /^[a-z0-9-]+(@[\d.]+)?$/.test(selectedText);
+  // Extract a valid npm package name from the selection.
+  // Handles plain selections like 'react-bits@2.1.4' or '@tanstack/react-query@5.0.0'
+  // but also raw package.json values like '"@emotion/styled": "^11.14.0"'.
+  const scopedMatch = selectedText.match(/(@[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+)(?:@([\d][^\s"']*))?\s*/);
+  const plainMatch = selectedText.match(/^([a-z0-9][a-z0-9._-]*)(?:@([\d][^\s"']*))?$/);
 
-  if (isNpm) {
+  let packageInput: string | undefined;
+  if (scopedMatch) {
+    packageInput = scopedMatch[2]
+      ? `${scopedMatch[1]}@${scopedMatch[2]}`
+      : scopedMatch[1];
+  } else if (plainMatch) {
+    packageInput = plainMatch[2]
+      ? `${plainMatch[1]}@${plainMatch[2]}`
+      : plainMatch[1];
+  }
+
+  if (packageInput) {
     return {
-      input: selectedText.trim(),
+      input: packageInput,
       input_type: "npm",
       output_format: "context_md",
     };

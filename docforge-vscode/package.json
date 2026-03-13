@@ -4,7 +4,6 @@
   "description": "Turn any library's documentation into a prompt-ready .context.md file, pinned to the exact version you're using.",
   "version": "1.0.0",
   "publisher": "docforge",
-  "icon": "media/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/docforge/docforge-vscode"
