@@ -27,13 +27,60 @@ export async function detectPackagesFromWorkspace(): Promise<
     return [];
   }
 
-  const workspaceRoot = workspaceFolders[0].uri.fsPath;
-  const pkgJsonPath = path.join(workspaceRoot, "package.json");
-
-  if (!fs.existsSync(pkgJsonPath)) {
+  const pkgJsonPath = await _findPackageJson(workspaceFolders[0].uri.fsPath);
+  if (!pkgJsonPath) {
     return [];
   }
 
+  return _parsePackageJson(pkgJsonPath);
+}
+
+/**
+ * Find the most relevant package.json:
+ * 1. Workspace root (single-package repo)
+ * 2. If none at root, ask the user to pick from immediate subdirectories (monorepo)
+ */
+async function _findPackageJson(root: string): Promise<string | undefined> {
+  const rootPkg = path.join(root, "package.json");
+  if (fs.existsSync(rootPkg)) {
+    return rootPkg;
+  }
+
+  // Scan immediate subdirectories for package.json files
+  let entries: fs.Dirent[];
+  try {
+    entries = fs.readdirSync(root, { withFileTypes: true });
+  } catch {
+    return undefined;
+  }
+
+  const candidates = entries
+    .filter((e) => e.isDirectory() && e.name !== "node_modules" && !e.name.startsWith("."))
+    .map((e) => path.join(root, e.name, "package.json"))
+    .filter((p) => fs.existsSync(p));
+
+  if (candidates.length === 0) {
+    return undefined;
+  }
+  if (candidates.length === 1) {
+    return candidates[0];
+  }
+
+  // Multiple package.json files found — let the user pick
+  const items = candidates.map((p) => ({
+    label: path.relative(root, path.dirname(p)),
+    detail: p,
+  }));
+
+  const selected = await vscode.window.showQuickPick(items, {
+    title: "DocForge: Multiple package.json files found — pick one",
+    placeHolder: "Select which package to read dependencies from",
+  });
+
+  return selected?.detail;
+}
+
+function _parsePackageJson(pkgJsonPath: string): DetectedPackage[] {
   try {
     const raw = fs.readFileSync(pkgJsonPath, "utf-8");
     const pkg = JSON.parse(raw) as {
@@ -44,19 +91,11 @@ export async function detectPackagesFromWorkspace(): Promise<
     const packages: DetectedPackage[] = [];
 
     for (const [name, version] of Object.entries(pkg.dependencies ?? {})) {
-      packages.push({
-        name,
-        version: cleanVersion(version),
-        devDependency: false,
-      });
+      packages.push({ name, version: cleanVersion(version), devDependency: false });
     }
 
     for (const [name, version] of Object.entries(pkg.devDependencies ?? {})) {
-      packages.push({
-        name,
-        version: cleanVersion(version),
-        devDependency: true,
-      });
+      packages.push({ name, version: cleanVersion(version), devDependency: true });
     }
 
     return packages.sort((a, b) => a.name.localeCompare(b.name));

@@ -5,7 +5,6 @@ POST /api/context   → queues a job, returns job_id immediately
 GET  /api/context/{job_id} → returns job status and result when done
 """
 
-import asyncio
 import logging
 import time
 import uuid
@@ -24,7 +23,6 @@ from ..models.schemas import (
 from ..services import cache
 from ..services.formatter import format_context_md
 from ..services.ingestion.npm_ingester import (
-    crawl_static_docs,
     resolve_npm_package,
     resolve_pypi_package,
 )
@@ -146,11 +144,16 @@ async def _run_pipeline(job_id: str, request: ContextRequest) -> None:
             raw_docs = await crawl_url(request.input)
 
         else:
-            # npm or pypi: crawl the resolved docs URL (Playwright for JS-rendered sites)
+            # npm or pypi: crawl the resolved docs URL
             if docs_url:
-                raw_docs = await crawl_url(docs_url)
+                if "github.com" in docs_url:
+                    # GitHub repo URLs → use the GitHub ingester (README + /docs)
+                    from ..services.ingestion.github_ingester import ingest_github_repo
+                    raw_docs = await ingest_github_repo(docs_url)
+                else:
+                    raw_docs = await crawl_url(docs_url)
             else:
-                # No homepage found — try to crawl npm package README
+                # No homepage found
                 logger.warning("No docs URL found for %s, using npm README only", library)
                 raw_docs = f"Library: {library}\nVersion: {version}\nNo documentation URL found."
 

@@ -1,20 +1,25 @@
 """
 Cache layer for DocForge.
 
-In DEV_MODE (no Redis), uses a simple in-memory dict with TTL simulation.
-In production, wraps Redis for distributed caching.
+Priority:
+1. Supabase — if SUPABASE_URL + SUPABASE_KEY are set (persistent, cross-restart)
+2. Redis    — if DEV_MODE=false and REDIS_URL is set
+3. In-memory — fallback for local dev
 """
 
 import json
 import logging
 import os
 import time
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
 DEV_MODE = os.getenv("DEV_MODE", "true").lower() == "true"
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 CACHE_TTL_SECONDS = 60 * 60 * 24  # 24 hours
 
 
@@ -67,19 +72,81 @@ class RedisCache:
         await self._redis.delete(key)
 
 
+class SupabaseCache:
+    """Supabase-backed persistent cache using a `cache_entries` table."""
+
+    def __init__(self, url: str, key: str) -> None:
+        import asyncio
+        from supabase import create_client  # type: ignore[import]
+        self._client = create_client(url, key)
+        self._loop = asyncio.get_event_loop
+
+    async def get(self, key: str) -> str | None:
+        import asyncio
+        now = datetime.now(timezone.utc).isoformat()
+        result = await asyncio.to_thread(
+            lambda: self._client.table("cache_entries")
+            .select("value")
+            .eq("key", key)
+            .gt("expires_at", now)
+            .execute()
+        )
+        if result.data:
+            return result.data[0]["value"]
+        return None
+
+    async def set(self, key: str, value: str, ttl: int = CACHE_TTL_SECONDS) -> None:
+        import asyncio
+        expires_at = (datetime.now(timezone.utc) + timedelta(seconds=ttl)).isoformat()
+        await asyncio.to_thread(
+            lambda: self._client.table("cache_entries")
+            .upsert({"key": key, "value": value, "expires_at": expires_at})
+            .execute()
+        )
+
+    async def keys_matching(self, pattern: str) -> list[str]:
+        import asyncio
+        needle = pattern.replace("*", "")
+        now = datetime.now(timezone.utc).isoformat()
+        result = await asyncio.to_thread(
+            lambda: self._client.table("cache_entries")
+            .select("key")
+            .like("key", f"%{needle}%")
+            .gt("expires_at", now)
+            .execute()
+        )
+        return [row["key"] for row in result.data]
+
+    async def delete(self, key: str) -> None:
+        import asyncio
+        await asyncio.to_thread(
+            lambda: self._client.table("cache_entries")
+            .delete()
+            .eq("key", key)
+            .execute()
+        )
+
+
 # Singleton cache instance
-_cache: InMemoryCache | RedisCache | None = None
+_cache: InMemoryCache | RedisCache | SupabaseCache | None = None
 
 
-def get_cache() -> InMemoryCache | RedisCache:
+def get_cache() -> InMemoryCache | RedisCache | SupabaseCache:
     global _cache
     if _cache is None:
-        if DEV_MODE:
-            logger.info("DEV_MODE: using in-memory cache (no Redis)")
-            _cache = InMemoryCache()
-        else:
+        if SUPABASE_URL and SUPABASE_KEY:
+            logger.info("Using Supabase cache at %s", SUPABASE_URL)
+            try:
+                _cache = SupabaseCache(SUPABASE_URL, SUPABASE_KEY)
+            except Exception as exc:
+                logger.warning("Supabase cache init failed (%s), falling back to in-memory", exc)
+                _cache = InMemoryCache()
+        elif not DEV_MODE:
             logger.info("Connecting to Redis at %s", REDIS_URL)
             _cache = RedisCache(REDIS_URL)
+        else:
+            logger.info("DEV_MODE: using in-memory cache (no Redis)")
+            _cache = InMemoryCache()
     return _cache
 
 

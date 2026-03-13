@@ -165,7 +165,14 @@ def _parse_npm_input(package_input: str) -> tuple[str, str]:
             raw_version = ""
 
     # Strip semver range prefixes (^, ~, >=, <=, >, <, =) from version
-    version = re.sub(r"^[^0-9]*", "", raw_version.strip().strip("\"'")) or "latest"
+    version = re.sub(r"^[^0-9]*", "", raw_version.strip().strip("\"'"))
+
+    # If still no version, scan the original input for any semver-like number
+    # (handles raw package.json values like '@scope/pkg": "^6.4.8"')
+    if not version:
+        fallback = re.search(r'(\d+\.\d+[\.\d]*)', package_input)
+        version = fallback.group(1) if fallback else "latest"
+
     return name.strip(), version
 
 

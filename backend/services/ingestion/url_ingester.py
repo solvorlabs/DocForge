@@ -54,9 +54,9 @@ async def crawl_with_playwright(url: str, max_pages: int = 15) -> str:
             visited.add(current_url)
 
             try:
-                await page.goto(current_url, wait_until="networkidle")
+                await page.goto(current_url, wait_until="domcontentloaded", timeout=15000)
                 # Give JS frameworks a moment to hydrate
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(0.3)
 
                 text = await page.evaluate("""() => {
                     // Remove nav, footer, scripts and extract meaningful text

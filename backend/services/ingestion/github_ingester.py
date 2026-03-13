@@ -94,6 +94,8 @@ def _normalize_github_url(url: str) -> str:
     url = re.sub(r"^git\+", "", url)
     # Handle git:// protocol
     url = re.sub(r"^git://", "https://", url)
+    # Strip URL fragments (e.g. #readme, #main)
+    url = url.split("#")[0]
     # Remove trailing .git if present, then re-add for clone
     url = url.rstrip("/")
     if not url.endswith(".git"):

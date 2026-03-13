@@ -96,7 +96,7 @@ export async function pollJobStatus(
   onProgress: (message: string) => void
 ): Promise<ContextResult> {
   const POLL_INTERVAL_MS = 2000;
-  const TIMEOUT_MS = 180_000; // 3 minutes
+  const TIMEOUT_MS = 420_000; // 7 minutes (crawl ~4min + Gemini ~1min + buffer)
 
   let messageIndex = 0;
   let elapsed = 0;
