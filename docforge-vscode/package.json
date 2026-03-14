@@ -74,6 +74,11 @@
           "default": true,
           "description": "Automatically open the generated context file after creation."
         },
+        "docforge.autoInjectCursor": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically inject the generated context into .cursor/rules/ for use with Cursor AI (only runs if .cursor/ exists in the workspace)."
+        },
         "docforge.apiKey": {
           "type": "string",
           "default": "",

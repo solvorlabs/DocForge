@@ -8,6 +8,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
+import { injectIntoCursor } from "./cursorInjector";
 
 /**
  * Write context content to the configured output path in the workspace.
@@ -15,7 +16,8 @@ import * as vscode from "vscode";
  * @returns The URI of the written file, or undefined if no workspace is open.
  */
 export async function writeContextFile(
-  content: string
+  content: string,
+  library?: string
 ): Promise<vscode.Uri | undefined> {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (!workspaceFolders || workspaceFolders.length === 0) {
@@ -38,6 +40,12 @@ export async function writeContextFile(
   // Write the file
   const encoder = new TextEncoder();
   await vscode.workspace.fs.writeFile(fileUri, encoder.encode(content));
+
+  // Auto-inject into Cursor if the project has .cursor/ and setting is enabled
+  const autoInjectCursor = config.get<boolean>("autoInjectCursor", true);
+  if (autoInjectCursor && library) {
+    await injectIntoCursor(workspaceRoot, library, content);
+  }
 
   // Show success notification with actions
   const message = alreadyExists

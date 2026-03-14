@@ -9,8 +9,8 @@ router = APIRouter(prefix="/api/search", tags=["search"])
 
 
 @router.get("", response_model=SearchResponse)
-async def search_libraries(q: str = Query(..., description="Search query")) -> SearchResponse:
+async def search_libraries(q: str = Query("", description="Search query"), limit: int = Query(20)) -> SearchResponse:
     """Search the DocForge cache for libraries matching a query string."""
     raw_results = await search_cached_libraries(q)
-    results = [SearchResult(**r) for r in raw_results]
+    results = [SearchResult(**r) for r in raw_results][:limit]
     return SearchResponse(results=results)

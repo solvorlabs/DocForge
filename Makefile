@@ -1,4 +1,4 @@
-.PHONY: dev-backend dev-extension install-backend install-extension install-mcp \
+.PHONY: dev-backend dev-extension dev-web install-backend install-extension install-mcp install-web \
         install-playwright test-backend test-extension clean help
 
 # ── Configuration ─────────────────────────────────────────────────────────────
@@ -53,6 +53,16 @@ package-extension: compile-extension ## Package the extension as a .vsix file
 
 test-extension: compile-extension ## Run extension tests
 	cd docforge-vscode && $(NPM) test
+
+# ── Web Frontend ──────────────────────────────────────────────────────────────
+install-web: ## Install web frontend dependencies
+	cd docforge-web && npm install
+
+dev-web: ## Start the Next.js frontend on http://localhost:3000
+	cd docforge-web && npm run dev
+
+build-web: ## Build the web frontend for production
+	cd docforge-web && npm run build
 
 # ── MCP Server ────────────────────────────────────────────────────────────────
 install-mcp: ## Install MCP server dependencies

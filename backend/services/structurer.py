@@ -1,5 +1,5 @@
 """
-Gemini 1.5 Flash structuring engine.
+Structuring engine: Gemini 2.0 Flash (primary) → Groq LLaMA (fallback).
 
 Takes raw Markdown documentation and produces a structured JSON representation
 with components, props, gotchas, and version-specific details.
@@ -8,7 +8,6 @@ The prompt is engineered to hunt specifically for AI codegen failure patterns
 (gotchas) that training data tends to get wrong.
 """
 
-import asyncio
 import json
 import logging
 import os
@@ -20,11 +19,21 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
+
+class _QuotaError(Exception):
+    """Raised internally when an LLM provider returns 429."""
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = "gemini-2.0-flash"
 GEMINI_ENDPOINT = (
     f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 )
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
+# Groq's context window is 128k tokens; keep well under to avoid truncation errors
+GROQ_MAX_DOC_CHARS = 40_000
 
 STRUCTURED_SCHEMA = """{
   "library": "string",
@@ -118,43 +127,79 @@ async def structure_with_gemini(library: str, version: str, raw_docs: str) -> di
         },
     }
 
-    for attempt in range(3):
-        if attempt:
-            wait = 60  # fixed 60s — enough for the RPM window to reset
-            logger.info("Gemini rate-limited, retrying in %ds (attempt %d/3)", wait, attempt + 1)
-            await asyncio.sleep(wait)
+    try:
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.post(
+                GEMINI_ENDPOINT,
+                params={"key": GEMINI_API_KEY},
+                json=payload,
+            )
+            if resp.status_code == 429:
+                raise _QuotaError("Gemini")
+            resp.raise_for_status()
+            data = resp.json()
 
-        try:
-            async with httpx.AsyncClient(timeout=120) as client:
-                resp = await client.post(
-                    GEMINI_ENDPOINT,
-                    params={"key": GEMINI_API_KEY},
-                    json=payload,
-                )
-                if resp.status_code == 429:
-                    continue
-                resp.raise_for_status()
-                data = resp.json()
+        elapsed = time.time() - t0
+        logger.info("Gemini structuring took %.1fs for %s@%s", elapsed, library, version)
+        raw_output = data["candidates"][0]["content"]["parts"][0]["text"]
+        return _parse_gemini_json(raw_output, library, version)
 
-            elapsed = time.time() - t0
-            logger.info("Gemini structuring took %.1fs for %s@%s", elapsed, library, version)
-            raw_output = data["candidates"][0]["content"]["parts"][0]["text"]
-            return _parse_gemini_json(raw_output, library, version)
-
-        except httpx.HTTPStatusError as exc:
-            if exc.response.status_code == 429:
-                continue
-            logger.error("Gemini structuring failed for %s@%s: %s", library, version, exc)
+    except _QuotaError:
+        logger.warning("Gemini quota hit for %s@%s — falling back to Groq", library, version)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 429:
+            logger.warning("Gemini quota hit for %s@%s — falling back to Groq", library, version)
+        else:
+            logger.error("Gemini failed for %s@%s: %s", library, version, exc)
             raise
-        except Exception as exc:
-            logger.error("Gemini structuring failed for %s@%s: %s", library, version, exc)
-            raise
+    except Exception as exc:
+        logger.error("Gemini failed for %s@%s: %s", library, version, exc)
+        raise
 
-    logger.error("Gemini rate limit exhausted after 3 attempts for %s@%s", library, version)
-    raise RuntimeError(
-        "Gemini API quota exceeded. You've likely hit your daily limit (1,500 req/day on free tier). "
-        "Check your usage at https://aistudio.google.com or upgrade to a paid API key."
+    # ── Groq fallback ────────────────────────────────────────────────────────
+    return await _structure_with_groq(library, version, raw_docs, t0)
+
+
+async def _structure_with_groq(library: str, version: str, raw_docs: str, t0: float) -> dict:
+    """Call Groq (LLaMA 3.3 70B) as a fallback when Gemini quota is exhausted."""
+    if not GROQ_API_KEY:
+        raise RuntimeError(
+            "Gemini quota exceeded and GROQ_API_KEY is not set. "
+            "Add GROQ_API_KEY to your .env (free at console.groq.com) to enable fallback."
+        )
+
+    truncated = raw_docs[:GROQ_MAX_DOC_CHARS]
+    if len(raw_docs) > GROQ_MAX_DOC_CHARS:
+        logger.info("Truncated docs from %d to %d chars for Groq", len(raw_docs), GROQ_MAX_DOC_CHARS)
+
+    prompt = STRUCTURING_PROMPT.format(
+        library=library,
+        version=version,
+        schema=STRUCTURED_SCHEMA,
+        today=date.today().isoformat(),
+        raw_docs=truncated,
     )
+
+    payload = {
+        "model": GROQ_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.1,
+        "max_tokens": 8192,
+    }
+
+    async with httpx.AsyncClient(timeout=120) as client:
+        resp = await client.post(
+            GROQ_ENDPOINT,
+            headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
+            json=payload,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+    elapsed = time.time() - t0
+    logger.info("Groq structuring took %.1fs for %s@%s", elapsed, library, version)
+    raw_output = data["choices"][0]["message"]["content"]
+    return _parse_gemini_json(raw_output, library, version)
 
 
 def _parse_gemini_json(raw: str, library: str, version: str) -> dict:

@@ -28,8 +28,20 @@ async def resolve_npm_package(package_input: str) -> dict:
     name, version = _parse_npm_input(package_input)
 
     async with httpx.AsyncClient(timeout=30) as client:
-        url = f"{NPM_REGISTRY}/{name}/{version}"
+        # Scoped packages (@scope/name) need the slash preserved in the URL.
+        # Packages like "@react-bits" with no sub-name are invalid scoped names —
+        # strip the @ and try as a plain package.
+        resolved_name = name
+        if name.startswith("@") and "/" not in name:
+            resolved_name = name.lstrip("@")
+            logger.warning("Invalid scoped name %r (no slash) — trying as plain package %r", name, resolved_name)
+
+        url = f"{NPM_REGISTRY}/{resolved_name}/{version}"
         resp = await client.get(url)
+        if resp.status_code == 404 and version != "latest":
+            logger.warning("npm %s@%s not found, falling back to latest", resolved_name, version)
+            url = f"{NPM_REGISTRY}/{resolved_name}/latest"
+            resp = await client.get(url)
         resp.raise_for_status()
         data = resp.json()
 

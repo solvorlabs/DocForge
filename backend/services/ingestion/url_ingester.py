@@ -11,12 +11,19 @@ Falls back to static crawl if Playwright is not installed.
 import asyncio
 import logging
 import os
-import re
-from urllib.parse import urljoin, urlparse
+import random
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
 PLAYWRIGHT_TIMEOUT = int(os.getenv("PLAYWRIGHT_TIMEOUT", "60000"))  # ms
+
+# Realistic Chrome user agent — rotated per session to avoid fingerprinting
+_USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+]
 
 
 async def crawl_with_playwright(url: str, max_pages: int = 15) -> str:
@@ -40,9 +47,24 @@ async def crawl_with_playwright(url: str, max_pages: int = 15) -> str:
     base_origin = f"{base.scheme}://{base.netloc}"
 
     async with async_playwright() as pw:
-        browser = await pw.chromium.launch(headless=True)
+        browser = await pw.chromium.launch(
+            headless=True,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+            ],
+        )
         context = await browser.new_context(
-            user_agent="DocForge/1.0 (documentation indexer)"
+            user_agent=random.choice(_USER_AGENTS),
+            viewport={"width": 1280, "height": 800},
+            locale="en-US",
+            timezone_id="America/New_York",
+            extra_http_headers={"Accept-Language": "en-US,en;q=0.9"},
+        )
+        # Remove the webdriver property that sites use to detect Playwright
+        await context.add_init_script(
+            "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
         )
         page = await context.new_page()
         page.set_default_timeout(PLAYWRIGHT_TIMEOUT)
@@ -55,8 +77,8 @@ async def crawl_with_playwright(url: str, max_pages: int = 15) -> str:
 
             try:
                 await page.goto(current_url, wait_until="domcontentloaded", timeout=15000)
-                # Give JS frameworks a moment to hydrate
-                await asyncio.sleep(0.3)
+                # Human-like random delay between pages (1–2.5s)
+                await asyncio.sleep(random.uniform(1.0, 2.5))
 
                 text = await page.evaluate("""() => {
                     // Remove nav, footer, scripts and extract meaningful text
