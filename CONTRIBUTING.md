@@ -17,22 +17,53 @@ Thanks for wanting to contribute. This document covers how to get your environme
 ```
 docforge/
 ├── backend/                     # FastAPI backend (Python)
-│   ├── main.py                  # App entry point
-│   ├── routers/                 # Route handlers
+│   ├── main.py                  # App entry point, router registration
+│   ├── routers/
+│   │   ├── context.py           # POST /api/context, GET /api/context/{id}
+│   │   ├── search.py            # GET /api/search
+│   │   ├── versions.py          # GET /api/versions/{library}
+│   │   └── corrections.py       # POST/GET /api/corrections
 │   ├── services/
-│   │   ├── ingestion/           # Four input methods (npm, url, github, paste)
-│   │   ├── structurer.py        # Gemini 1.5 Flash integration
-│   │   ├── formatter.py         # JSON → .context.md
-│   │   └── cache.py             # In-memory (dev) or Redis (prod)
+│   │   ├── ingestion/
+│   │   │   ├── npm_ingester.py  # npm registry → metadata + homepage
+│   │   │   ├── url_ingester.py  # Playwright stealth crawler
+│   │   │   ├── github_ingester.py # Shallow clone → README + /docs + .d.ts
+│   │   │   └── paste_ingester.py  # Raw text passthrough
+│   │   ├── structurer.py        # Gemini 2.0 Flash + Groq fallback
+│   │   ├── formatter.py         # Structured JSON → .context.md
+│   │   └── cache.py             # Supabase (prod) or in-memory (DEV_MODE)
 │   └── models/schemas.py        # Pydantic request/response models
 │
 ├── docforge-vscode/             # VS Code extension (TypeScript)
 │   └── src/
 │       ├── extension.ts         # Entry point, command registration
-│       ├── commands/            # generateContext, updateContext
-│       ├── api/docforgeClient.ts# HTTP client + polling
-│       ├── ui/                  # inputFlow, statusBar
-│       └── utils/               # fileWriter, packageDetector
+│       ├── commands/
+│       │   ├── generateContext.ts  # DF: Generate Context File
+│       │   └── updateContext.ts    # DF: Update Existing Context
+│       ├── api/docforgeClient.ts   # HTTP client + polling
+│       ├── ui/
+│       │   ├── inputFlow.ts     # 3-step QuickPick: source → value → format
+│       │   └── statusBar.ts     # Status bar item
+│       └── utils/
+│           ├── fileWriter.ts    # Write/append context file
+│           ├── packageDetector.ts  # Read package.json, filter URL deps
+│           └── cursorInjector.ts   # Auto-write to .cursor/rules/*.mdc
+│
+├── docforge-cli/                # CLI tool (Node.js, zero dependencies)
+│   └── bin/docforge.js          # Single-file CLI with ANSI colors
+│
+├── docforge-web/                # Web UI (Next.js 14 + Three.js)
+│   ├── app/
+│   │   ├── page.tsx             # Landing page with Beams background
+│   │   └── generate/page.tsx    # Generate page with live job polling
+│   ├── components/
+│   │   ├── Beams.tsx            # Three.js animated background
+│   │   ├── GenerateForm.tsx     # Tabbed input form
+│   │   ├── JobStatus.tsx        # Live progress stepper
+│   │   └── ResultViewer.tsx     # Copy/download + markdown preview
+│   └── lib/
+│       ├── api.ts               # Typed fetch wrappers
+│       └── types.ts             # TypeScript interfaces
 │
 └── docforge-mcp/                # MCP server (Python)
     ├── server.py                # MCP entry point
@@ -57,7 +88,7 @@ make install
 ```bash
 git checkout -b fix/crawler-timeout
 # or
-git checkout -b feat/pypi-version-pinning
+git checkout -b feat/jsr-ingester
 ```
 
 Branch naming: `fix/`, `feat/`, `docs/`, `refactor/` prefixes.
@@ -77,25 +108,39 @@ make dev-extension   # TypeScript watch mode
 # Press F5 in VS Code to launch Extension Development Host
 ```
 
+For web UI changes:
+
+```bash
+make dev-web         # Next.js with Turbopack at http://localhost:3000
+```
+
 ### 4. Test your changes
 
-**Backend** — test the full pipeline with a real package:
+**Backend** — test the full pipeline with real packages:
 
 ```bash
 make test-backend
 curl http://localhost:8000/api/context/<job_id>
 ```
 
-Validate against these test targets — all four must produce correct output:
+Validate against these test targets — all must produce correct output:
 
 | Package | What to verify |
 |---------|---------------|
 | `react-bits@2.1.4` | `'use client'` gotcha, `npx jsrepo add` install command, `framer-motion` peer dep |
 | `@tanstack/react-query@5.0.0` | v4 → v5 breaking changes mentioned in gotchas |
-| `langchain@0.1.0` | Python-style import path, correct version |
 | `fastapi` (no version) | Resolves to latest, PyPI metadata correct |
+| `https://github.com/DavidHDev/react-bits` | GitHub ingester: README + /docs extracted |
 
-**Extension** — compile must pass with no TypeScript errors:
+**CLI** — test from a project directory with a `package.json`:
+
+```bash
+cd /tmp/test-project
+docforge generate react@18.2.0
+docforge detect
+```
+
+**Extension** — TypeScript must compile clean:
 
 ```bash
 make compile-extension
@@ -106,9 +151,9 @@ make compile-extension
 Write commit messages in the imperative present tense:
 
 ```
-feat: add PyPI version pinning for scoped packages
-fix: handle npm registry 404 for private packages
-docs: add troubleshooting section to setup.md
+feat: add JSR (JavaScript Registry) ingester
+fix: handle npm 404 for scoped packages without slash
+docs: update setup.md with Groq fallback instructions
 refactor: extract polling logic from generateContext command
 ```
 
@@ -131,23 +176,31 @@ Understanding these helps you make changes that fit the existing design.
 
 ### Why a separate FastAPI backend?
 
-Crawling takes 30–90 seconds. A background job model (submit → poll) lets the VS Code extension show a progress spinner without blocking. It also means the MCP server and extension share the same pipeline with no code duplication.
+Crawling takes 30–90 seconds. A background job model (submit → poll) lets the VS Code extension and CLI show a progress spinner without blocking. It also means every client — extension, CLI, MCP server, web UI — shares the same pipeline with no code duplication.
 
 ### Why Playwright for crawling?
 
-Most modern doc sites are React or Next.js apps that render content client-side. `httpx` alone returns empty HTML shells. Playwright runs real Chromium to get the fully hydrated DOM. We fall back to httpx static crawl when Playwright is not installed, so the tool degrades gracefully.
+Most modern doc sites are React or Next.js apps that render content client-side. `httpx` alone returns empty HTML shells. Playwright runs real Chromium to get the fully hydrated DOM. We rotate realistic Chrome user agents and strip the `navigator.webdriver` flag to avoid bot detection.
 
-### Why Gemini 1.5 Flash?
+### Why Gemini 2.0 Flash as primary + Groq as fallback?
 
-Its 1M token context window handles large documentation sites in one shot. The Flash variant is fast enough for interactive use (5–15s structuring). The prompt is specifically engineered to hunt for "gotchas" — this is the core value proposition of the tool.
+Gemini's 1M token context window handles large documentation sites in one shot. The Flash variant is fast enough for interactive use (5–15s structuring). When Gemini returns 429 (daily quota exceeded), the pipeline immediately retries with Groq LLaMA 3.3 70B — no user action needed. Groq's free tier is 14,400 requests/day.
 
 ### Why DEV_MODE in-memory cache?
 
-Redis is operationally complex to run locally. The in-memory fallback means `make dev-backend` is the only command needed to run the full stack. In production, Redis is swapped in for distributed caching across multiple backend instances.
+Supabase is operationally complex to set up locally. The in-memory fallback means `make dev-backend` is the only command needed to run the full stack. In production, Supabase is used for persistent caching across restarts and multiple backend instances.
+
+### Why append mode instead of overwrite for multiple packages?
+
+When a project uses 30 dependencies, generating 30 separate `.context.md` files is unworkable. Appending all results into one file with `---` separators gives AI tools a single point of truth for the whole project's dependencies.
 
 ### Why no external npm deps in the VS Code extension?
 
-VS Code extensions bundle their `node_modules` into the `.vsix`. Keeping the extension dependency-free (Node.js built-ins only) keeps the bundle small and eliminates version conflicts. The `https`/`http` modules handle all API communication.
+VS Code extensions bundle their `node_modules` into the `.vsix`. Keeping the extension dependency-free (Node.js built-ins only) keeps the bundle small and eliminates version conflicts.
+
+### Why no external npm deps in the CLI?
+
+Same reason — and it means `npm install -g docforge-cli` has instant install time with no transitive dependencies to audit.
 
 ---
 
@@ -157,16 +210,22 @@ VS Code extensions bundle their `node_modules` into the `.vsix`. Keeping the ext
 
 - **Type hints** on all public functions
 - **Docstrings** explain *why* something exists, not what the code does line by line
-- **Logging** at meaningful points: crawl start/end with char counts, cache hits, Gemini timing
-- Follow PEP 8; use `ruff` for formatting if available
+- **Logging** at meaningful points: crawl start/end with char counts, cache hits, AI timing
+- Follow PEP 8
 - `async`/`await` throughout — no blocking I/O on the event loop
 
-### TypeScript (VS Code extension)
+### TypeScript (VS Code extension + web UI)
 
-- `strict: true` is enforced in `tsconfig.json` — no implicit `any`
+- `strict: true` in `tsconfig.json` — no implicit `any`
 - `async`/`await` only — no callbacks or `.then()` chains
 - Use the VS Code [disposable pattern](https://code.visualstudio.com/api/references/vscode-api#Disposable) for all subscriptions
 - Keep commands thin — business logic goes in `api/` and `utils/`, not in `commands/`
+
+### CLI (Node.js)
+
+- Zero external dependencies — Node.js built-ins only (`fs`, `path`, `https`, `http`)
+- ANSI colors via raw escape codes (no chalk)
+- All output to `process.stdout` / `process.stderr`, never `console.log` in library code
 
 ---
 
@@ -175,17 +234,18 @@ VS Code extensions bundle their `node_modules` into the `.vsix`. Keeping the ext
 Good areas to contribute:
 
 - **New ingester** — e.g. a dedicated JSR (JavaScript Registry) ingester
-- **Better HTML → Markdown conversion** — improving the Docling/html2text pipeline
+- **Better HTML → Markdown conversion** — improving the html2text pipeline
 - **Gotcha extraction improvements** — prompt engineering for specific library types
-- **Extension batch generation** — generate context for multiple packages at once
 - **Backend tests** — pytest unit tests for ingesters and the formatter
 - **CI/CD** — GitHub Actions for linting and running the test targets
+- **Community corrections UI** — frontend page for submitting doc corrections
+- **User accounts** — Supabase Auth integration for the web UI
 
 ### Out of scope (for now)
 
 - Changing the `.context.md` output format in a breaking way
-- Adding new runtime dependencies to the VS Code extension
-- Switching away from Gemini without a discussion in an issue first
+- Adding new runtime dependencies to the VS Code extension or CLI
+- Switching away from Gemini/Groq without a discussion in an issue first
 
 ---
 
@@ -195,8 +255,8 @@ Include:
 
 1. The exact input (package name, URL, or GitHub repo)
 2. The full error message from the backend logs (`make dev-backend` terminal output)
-3. Which step failed: resolving metadata, crawling, Gemini structuring, or formatting
-4. The `DEV_MODE` value and whether `GEMINI_API_KEY` is set
+3. Which step failed: resolving metadata, crawling, AI structuring, or formatting
+4. The `DEV_MODE` value and whether `GEMINI_API_KEY` / `GROQ_API_KEY` are set
 
 ---
 
