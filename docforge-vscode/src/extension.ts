@@ -30,14 +30,14 @@ export function activate(context: vscode.ExtensionContext): void {
       async () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
-          vscode.window.showErrorMessage("DocForge: No active editor.");
+          vscode.window.showErrorMessage("DF: No active editor.");
           return;
         }
 
         const selection = editor.document.getText(editor.selection).trim();
         if (!selection) {
           vscode.window.showWarningMessage(
-            "DocForge: No text selected. Select a package name and try again."
+            "DF: No text selected. Select a package name and try again."
           );
           return;
         }
@@ -62,36 +62,18 @@ export function activate(context: vscode.ExtensionContext): void {
       const selected = await pickPackagesFromWorkspace();
       if (selected.length === 0) return;
 
-      if (selected.length === 1) {
-        // Single package: run directly
-        await runGeneration({
-          input: selected[0],
-          input_type: "npm",
-          output_format: "context_md",
-        });
-      } else {
-        // Multiple packages: ask which one to generate (batch is a future feature)
-        const choice = await vscode.window.showQuickPick(
-          selected.map((pkg) => ({ label: `$(package) ${pkg}`, detail: pkg })),
-          {
-            title: "DocForge: Choose a package to generate context for",
-            placeHolder:
-              "Multiple packages selected — choose one to start with",
-          }
+      // Run all selected packages sequentially, appending each to the context file
+      for (let i = 0; i < selected.length; i++) {
+        await runGeneration(
+          { input: selected[i], input_type: "npm", output_format: "context_md" },
+          /* append= */ i > 0  // first package overwrites, rest append
         );
-        if (choice) {
-          await runGeneration({
-            input: choice.detail,
-            input_type: "npm",
-            output_format: "context_md",
-          });
-        }
       }
     })
   );
 
   vscode.window.showInformationMessage(
-    "DocForge is ready! Use the command palette to generate a context file."
+    "DocForge is ready! Press Ctrl+Shift+P and type DF: to get started."
   );
 }
 

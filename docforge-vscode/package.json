@@ -32,19 +32,19 @@
     "commands": [
       {
         "command": "docforge.generateContext",
-        "title": "DocForge: Generate Context File"
+        "title": "DF: Generate Context File"
       },
       {
         "command": "docforge.generateFromSelection",
-        "title": "DocForge: Generate Context for Selected Package"
+        "title": "DF: Generate Context for Selected Package"
       },
       {
         "command": "docforge.updateContext",
-        "title": "DocForge: Update Existing Context"
+        "title": "DF: Update Existing Context"
       },
       {
         "command": "docforge.detectDependencies",
-        "title": "DocForge: Detect from package.json"
+        "title": "DF: Detect from package.json"
       }
     ],
     "menus": {

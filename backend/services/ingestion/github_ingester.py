@@ -96,6 +96,9 @@ def _normalize_github_url(url: str) -> str:
     url = re.sub(r"^git://", "https://", url)
     # Strip URL fragments (e.g. #readme, #main)
     url = url.split("#")[0]
+    # Strip /tree/... and /blob/... subdirectory paths — only repo root is cloneable
+    # e.g. https://github.com/owner/repo/tree/master/types/node → https://github.com/owner/repo
+    url = re.sub(r"(github\.com/[^/]+/[^/]+)/(tree|blob)/.*", r"\1", url)
     # Remove trailing .git if present, then re-add for clone
     url = url.rstrip("/")
     if not url.endswith(".git"):

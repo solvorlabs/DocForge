@@ -24,7 +24,7 @@ export async function generateContext(): Promise<void> {
     vscode.workspace.workspaceFolders.length === 0
   ) {
     vscode.window.showErrorMessage(
-      "DocForge: Please open a project folder before generating context."
+      "DF: Please open a project folder before generating context."
     );
     return;
   }
@@ -37,7 +37,7 @@ export async function generateContext(): Promise<void> {
   const healthy = await checkHealth();
   if (!healthy) {
     const action = await vscode.window.showErrorMessage(
-      `DocForge: Cannot reach backend at ${backendUrl}.\n` +
+      `DF: Cannot reach backend at ${backendUrl}.\n` +
         "Is the DocForge backend running?",
       "Use Local Backend",
       "Dismiss"
@@ -51,7 +51,7 @@ export async function generateContext(): Promise<void> {
           vscode.ConfigurationTarget.Workspace
         );
       vscode.window.showInformationMessage(
-        "DocForge: Backend URL updated to http://localhost:8000"
+        "DF: Backend URL updated to http://localhost:8000"
       );
     }
     return;
@@ -69,14 +69,16 @@ export async function generateContext(): Promise<void> {
 /**
  * Shared generation logic used by multiple commands.
  * Accepts a pre-built ContextRequest and runs the full pipeline.
+ *
+ * @param append - When true, appends result to existing context file instead of overwriting.
  */
-export async function runGeneration(request: ContextRequest): Promise<void> {
+export async function runGeneration(request: ContextRequest, append = false): Promise<void> {
   setRunning("Starting...");
 
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
-      title: `DocForge: Generating context for ${request.input}`,
+      title: `DF: Generating context for ${request.input}`,
       cancellable: false,
     },
     async (progress) => {
@@ -95,12 +97,19 @@ export async function runGeneration(request: ContextRequest): Promise<void> {
           throw new Error("Backend returned no output");
         }
 
-        await writeContextFile(result.output);
+        const extension = request.output_format === "json" ? ".json" : ".md";
+        const outputExt = request.output_format === "context_md" ? undefined : extension;
+
+        await writeContextFile(result.output, {
+          append,
+          extension: outputExt,
+          library: result.library ?? request.input,
+        });
         setSuccess();
       } catch (err) {
         setError();
         const message = err instanceof Error ? err.message : String(err);
-        vscode.window.showErrorMessage(`DocForge: ${message}`);
+        vscode.window.showErrorMessage(`DF: ${message}`);
       }
     }
   );

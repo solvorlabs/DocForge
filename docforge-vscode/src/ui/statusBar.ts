@@ -3,9 +3,9 @@
  *
  * Shows persistent status at the bottom of the VS Code window:
  *   Default:   $(book) DocForge
- *   Running:   $(sync~spin) DocForge: Fetching...
- *   Done:      $(check) DocForge: Ready
- *   Error:     $(warning) DocForge: Failed
+ *   Running:   $(sync~spin) DF: Fetching...
+ *   Done:      $(check) DF: Ready
+ *   Error:     $(warning) DF: Failed
  */
 
 import * as vscode from "vscode";
@@ -18,7 +18,7 @@ export function createStatusBar(): vscode.StatusBarItem {
     100
   );
   statusBarItem.command = "docforge.generateContext";
-  statusBarItem.tooltip = "DocForge: Click to generate a context file";
+  statusBarItem.tooltip = "DF: Click to generate a context file";
   setIdle();
   statusBarItem.show();
   return statusBarItem;
@@ -27,21 +27,21 @@ export function createStatusBar(): vscode.StatusBarItem {
 export function setIdle(): void {
   if (!statusBarItem) return;
   statusBarItem.text = "$(book) DocForge";
-  statusBarItem.tooltip = "DocForge: Click to generate a context file";
+  statusBarItem.tooltip = "DF: Click to generate a context file";
   statusBarItem.backgroundColor = undefined;
 }
 
 export function setRunning(message = "Fetching..."): void {
   if (!statusBarItem) return;
-  statusBarItem.text = `$(sync~spin) DocForge: ${message}`;
+  statusBarItem.text = `$(sync~spin) DF: ${message}`;
   statusBarItem.tooltip = "DocForge is processing...";
   statusBarItem.backgroundColor = undefined;
 }
 
 export function setSuccess(): void {
   if (!statusBarItem) return;
-  statusBarItem.text = "$(check) DocForge: Ready";
-  statusBarItem.tooltip = "DocForge: Context file generated successfully";
+  statusBarItem.text = "$(check) DF: Ready";
+  statusBarItem.tooltip = "DF: Context file generated successfully";
   statusBarItem.backgroundColor = new vscode.ThemeColor(
     "statusBarItem.activeBackground"
   );
@@ -51,8 +51,8 @@ export function setSuccess(): void {
 
 export function setError(): void {
   if (!statusBarItem) return;
-  statusBarItem.text = "$(warning) DocForge: Failed";
-  statusBarItem.tooltip = "DocForge: An error occurred. Click to try again.";
+  statusBarItem.text = "$(warning) DF: Failed";
+  statusBarItem.tooltip = "DF: An error occurred. Click to try again.";
   statusBarItem.backgroundColor = new vscode.ThemeColor(
     "statusBarItem.errorBackground"
   );

@@ -153,6 +153,13 @@ def _parse_npm_input(package_input: str) -> tuple[str, str]:
     """
     package_input = package_input.strip().strip("\"'")
 
+    # Reject URL-based dependency specs (e.g. "https://www.reactbits.dev/")
+    if package_input.startswith(("http://", "https://", "git+", "git://", "github:", "file:")):
+        raise ValueError(
+            f"Input looks like a URL, not an npm package name: {package_input!r}. "
+            "Use input_type='url' instead."
+        )
+
     if package_input.startswith("@"):
         # Scoped package: extract @scope/name, then optionally @version
         m = re.match(r'^(@[A-Za-z0-9._-]+/[A-Za-z0-9._-]+)(?:@([^\s"\':]*))?', package_input)

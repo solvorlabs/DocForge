@@ -65,7 +65,7 @@ const INPUT_TYPE_OPTIONS: InputTypeOption[] = [
 export async function runInputFlow(): Promise<ContextRequest | undefined> {
   // Step 1: Choose input type
   const selected = await vscode.window.showQuickPick(INPUT_TYPE_OPTIONS, {
-    title: "DocForge: Generate Context File (1/2)",
+    title: "DF: Generate Context File (1/3)",
     placeHolder: "How do you want to specify the library?",
     matchOnDescription: true,
     matchOnDetail: true,
@@ -81,14 +81,14 @@ export async function runInputFlow(): Promise<ContextRequest | undefined> {
   if (selected.type === "paste") {
     // For paste, open an input box that accepts multi-line content
     inputValue = await vscode.window.showInputBox({
-      title: "DocForge: Paste Documentation Content (2/2)",
+      title: "DF: Paste Documentation Content (2/3)",
       prompt: "Paste your HTML, Markdown, or text documentation",
       placeHolder: selected.placeholder,
       ignoreFocusOut: true, // Keep open if user clicks away
     });
   } else {
     inputValue = await vscode.window.showInputBox({
-      title: `DocForge: Enter ${selected.description} (2/2)`,
+      title: `DF: Enter ${selected.description} (2/3)`,
       prompt: `Enter the ${selected.description} to generate context for`,
       placeHolder: selected.placeholder,
       ignoreFocusOut: true,
@@ -105,10 +105,27 @@ export async function runInputFlow(): Promise<ContextRequest | undefined> {
     return undefined;
   }
 
+  // Step 3: Choose output format
+  const formatChoice = await vscode.window.showQuickPick(
+    [
+      { label: "$(file-text) Context MD", description: ".context.md", detail: "Structured context file optimised for AI prompts (recommended)", format: "context_md" as const },
+      { label: "$(markdown) Plain Markdown", description: ".md", detail: "Standard markdown — good for reading in GitHub or Obsidian", format: "markdown" as const },
+      { label: "$(json) JSON", description: ".json", detail: "Raw structured JSON — useful for large projects or programmatic use", format: "json" as const },
+    ],
+    {
+      title: "DF: Choose output format (3/3)",
+      placeHolder: "How should the context file be formatted?",
+    }
+  );
+
+  if (!formatChoice) {
+    return undefined;
+  }
+
   const request: ContextRequest = {
     input: inputValue.trim(),
     input_type: selected.type,
-    output_format: "context_md",
+    output_format: formatChoice.format === "markdown" ? "context_md" : formatChoice.format,
   };
 
   if (selected.type === "paste") {

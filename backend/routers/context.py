@@ -103,6 +103,16 @@ async def _run_pipeline(job_id: str, request: ContextRequest) -> None:
         docs_url: str | None = None
 
         if request.input_type == InputType.npm:
+            # If the user somehow passed a URL as an npm package, treat it as a URL crawl
+            if request.input.startswith(("http://", "https://")):
+                logger.warning("npm input looks like a URL — switching to URL crawl: %s", request.input)
+                raw_docs = await crawl_url(request.input)
+                structured = await structure_with_gemini(library, version, raw_docs)
+                output = format_context_md(structured) if request.output_format == OutputFormat.context_md else __import__("json").dumps(structured, indent=2)
+                structured["cached_at"] = date.today().isoformat()
+                await cache.set_cached_context(library, version, structured)
+                await update_status(JobStatus.complete, library=library, version=version, output=output, components=structured.get("components", []))
+                return
             meta = await resolve_npm_package(request.input)
             library = meta["name"]
             version = meta["version"]
@@ -141,7 +151,12 @@ async def _run_pipeline(job_id: str, request: ContextRequest) -> None:
             raw_docs = await ingest_github_repo(request.input)
 
         elif request.input_type == InputType.url:
-            raw_docs = await crawl_url(request.input)
+            # Auto-route GitHub URLs to the smarter GitHub ingester
+            if "github.com" in request.input:
+                from ..services.ingestion.github_ingester import ingest_github_repo
+                raw_docs = await ingest_github_repo(request.input)
+            else:
+                raw_docs = await crawl_url(request.input)
 
         else:
             # npm or pypi: crawl the resolved docs URL

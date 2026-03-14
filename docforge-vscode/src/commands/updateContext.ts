@@ -15,7 +15,7 @@ export async function updateContext(): Promise<void> {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (!workspaceFolders || workspaceFolders.length === 0) {
     vscode.window.showErrorMessage(
-      "DocForge: No workspace open."
+      "DF: No workspace open."
     );
     return;
   }
@@ -38,7 +38,7 @@ export async function updateContext(): Promise<void> {
 
   if (existingPackage) {
     const action = await vscode.window.showInformationMessage(
-      `DocForge: Update context for ${existingPackage}?`,
+      `DF: Update context for ${existingPackage}?`,
       "Update",
       "Choose Different Package"
     );

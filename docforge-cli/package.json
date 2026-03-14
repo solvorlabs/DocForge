@@ -1,0 +1,12 @@
+{
+  "name": "docforge-cli",
+  "version": "1.0.0",
+  "description": "Generate prompt-ready context files for any library — pinned to your exact version.",
+  "bin": {
+    "docforge": "./bin/docforge.js"
+  },
+  "keywords": ["ai", "documentation", "context", "llm", "cursor", "copilot"],
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "dependencies": {}
+}

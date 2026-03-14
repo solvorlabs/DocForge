@@ -73,7 +73,7 @@ async function _findPackageJson(root: string): Promise<string | undefined> {
   }));
 
   const selected = await vscode.window.showQuickPick(items, {
-    title: "DocForge: Multiple package.json files found — pick one",
+    title: "DF: Multiple package.json files found — pick one",
     placeHolder: "Select which package to read dependencies from",
   });
 
@@ -91,10 +91,13 @@ function _parsePackageJson(pkgJsonPath: string): DetectedPackage[] {
     const packages: DetectedPackage[] = [];
 
     for (const [name, version] of Object.entries(pkg.dependencies ?? {})) {
+      // Skip URL-based dependencies (github:, file:, http:, https:, git+, etc.)
+      if (_isUrlVersion(version)) continue;
       packages.push({ name, version: cleanVersion(version), devDependency: false });
     }
 
     for (const [name, version] of Object.entries(pkg.devDependencies ?? {})) {
+      if (_isUrlVersion(version)) continue;
       packages.push({ name, version: cleanVersion(version), devDependency: true });
     }
 
@@ -113,7 +116,7 @@ export async function pickPackagesFromWorkspace(): Promise<string[]> {
 
   if (packages.length === 0) {
     vscode.window.showWarningMessage(
-      "DocForge: No package.json found in workspace, or it has no dependencies."
+      "DF: No package.json found in workspace, or it has no dependencies."
     );
     return [];
   }
@@ -126,7 +129,7 @@ export async function pickPackagesFromWorkspace(): Promise<string[]> {
   }));
 
   const selected = await vscode.window.showQuickPick(items, {
-    title: "DocForge: Select packages to generate context for",
+    title: "DF: Select packages to generate context for",
     placeHolder: "Search packages... (Space to select multiple)",
     canPickMany: true,
     matchOnDescription: true,
@@ -142,4 +145,9 @@ export async function pickPackagesFromWorkspace(): Promise<string[]> {
 /** Strip semver range prefixes like ^, ~, >=, etc. */
 function cleanVersion(version: string): string {
   return version.replace(/^[^0-9]*/, "") || "latest";
+}
+
+/** Returns true if the version string is a URL or non-registry reference. */
+function _isUrlVersion(version: string): boolean {
+  return /^(https?:|git\+|git:|github:|gitlab:|bitbucket:|file:)/.test(version);
 }

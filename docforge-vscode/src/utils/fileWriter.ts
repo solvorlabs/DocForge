@@ -10,26 +10,41 @@ import * as path from "path";
 import * as vscode from "vscode";
 import { injectIntoCursor } from "./cursorInjector";
 
+export interface WriteOptions {
+  /** When true, appends to the file instead of overwriting. Default: false */
+  append?: boolean;
+  /** File extension override e.g. ".json". Defaults to configured outputPath. */
+  extension?: string;
+  /** Library name for Cursor injection */
+  library?: string;
+}
+
 /**
- * Write context content to the configured output path in the workspace.
+ * Write (or append) context content to the configured output path in the workspace.
  *
  * @returns The URI of the written file, or undefined if no workspace is open.
  */
 export async function writeContextFile(
   content: string,
-  library?: string
+  options: WriteOptions = {}
 ): Promise<vscode.Uri | undefined> {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (!workspaceFolders || workspaceFolders.length === 0) {
     vscode.window.showErrorMessage(
-      "DocForge: No workspace folder is open. Please open a project first."
+      "DF: No workspace folder is open. Please open a project first."
     );
     return undefined;
   }
 
   const config = vscode.workspace.getConfiguration("docforge");
-  const outputPath = config.get<string>("outputPath", ".context.md");
+  let outputPath = config.get<string>("outputPath", ".context.md");
   const autoOpen = config.get<boolean>("autoOpenFile", true);
+
+  // Override extension if requested (e.g. ".json")
+  if (options.extension) {
+    const base = outputPath.replace(/\.[^.]+$/, "");
+    outputPath = `${base}${options.extension}`;
+  }
 
   const workspaceRoot = workspaceFolders[0].uri.fsPath;
   const fullPath = path.join(workspaceRoot, outputPath);
@@ -37,20 +52,23 @@ export async function writeContextFile(
 
   const alreadyExists = fs.existsSync(fullPath);
 
-  // Write the file
+  let finalContent = content;
+  if (options.append && alreadyExists) {
+    const existing = fs.readFileSync(fullPath, "utf-8");
+    finalContent = existing.trimEnd() + "\n\n---\n\n" + content;
+  }
+
   const encoder = new TextEncoder();
-  await vscode.workspace.fs.writeFile(fileUri, encoder.encode(content));
+  await vscode.workspace.fs.writeFile(fileUri, encoder.encode(finalContent));
 
   // Auto-inject into Cursor if the project has .cursor/ and setting is enabled
   const autoInjectCursor = config.get<boolean>("autoInjectCursor", true);
-  if (autoInjectCursor && library) {
-    await injectIntoCursor(workspaceRoot, library, content);
+  if (autoInjectCursor && options.library) {
+    await injectIntoCursor(workspaceRoot, options.library, content);
   }
 
-  // Show success notification with actions
-  const message = alreadyExists
-    ? `DocForge: Updated ${outputPath}`
-    : `DocForge: Created ${outputPath}`;
+  const verb = options.append && alreadyExists ? "Appended to" : alreadyExists ? "Updated" : "Created";
+  const message = `DF: ${verb} ${outputPath}`;
 
   const action = await vscode.window.showInformationMessage(
     message,
@@ -61,13 +79,11 @@ export async function writeContextFile(
   if (action === "Open File" || (action === undefined && autoOpen)) {
     await vscode.window.showTextDocument(fileUri);
   } else if (action === "Show Diff" && alreadyExists) {
-    // Show diff between old and new content
-    // We already overwrote, so this shows the current file vs a blank title
     await vscode.commands.executeCommand(
       "vscode.diff",
       vscode.Uri.parse("untitled:Previous"),
       fileUri,
-      `DocForge: ${outputPath} (updated)`
+      `DF: ${outputPath} (updated)`
     );
   }
 
