@@ -38,10 +38,39 @@ async def resolve_npm_package(package_input: str) -> dict:
 
         url = f"{NPM_REGISTRY}/{resolved_name}/{version}"
         resp = await client.get(url)
+
         if resp.status_code == 404 and version != "latest":
-            logger.warning("npm %s@%s not found, falling back to latest", resolved_name, version)
-            url = f"{NPM_REGISTRY}/{resolved_name}/latest"
-            resp = await client.get(url)
+            # Version not published on npm. Try to find a GitHub repo so we can
+            # clone the exact git tag for that version instead of giving up.
+            pkg_resp = await client.get(f"{NPM_REGISTRY}/{resolved_name}")
+            if pkg_resp.status_code == 200:
+                pkg_data = pkg_resp.json()
+                dist_tags = pkg_data.get("dist-tags", {})
+                latest_ver = dist_tags.get("latest", "")
+                latest_meta = pkg_data.get("versions", {}).get(latest_ver, {})
+                repo_url = (latest_meta.get("repository") or {}).get("url", "")
+                if repo_url and "github.com" in repo_url:
+                    logger.info(
+                        "npm %s@%s not on registry — found GitHub repo %s, will try git tag",
+                        resolved_name, version, repo_url,
+                    )
+                    return {
+                        "name": resolved_name,
+                        "version": version,          # keep the version the user asked for
+                        "description": pkg_data.get("description"),
+                        "homepage": None,
+                        "repository": repo_url,
+                        "keywords": pkg_data.get("keywords", []),
+                        "_version_tag": version,     # signal: use GitHub ingester at this tag
+                    }
+
+                latest_hint = f" Latest on npm: {latest_ver}." if latest_ver else ""
+                raise ValueError(
+                    f"{resolved_name}@{version} was not found on npm.{latest_hint}"
+                )
+
+            raise ValueError(f"{resolved_name}@{version} was not found on npm.")
+
         resp.raise_for_status()
         data = resp.json()
 

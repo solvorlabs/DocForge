@@ -101,6 +101,7 @@ async def _run_pipeline(job_id: str, request: ContextRequest) -> None:
         library = request.input
         version = "latest"
         docs_url: str | None = None
+        version_tag: str | None = None
 
         if request.input_type == InputType.npm:
             # If the user somehow passed a URL as an npm package, treat it as a URL crawl
@@ -117,7 +118,8 @@ async def _run_pipeline(job_id: str, request: ContextRequest) -> None:
             library = meta["name"]
             version = meta["version"]
             docs_url = meta.get("homepage")
-            logger.info("Resolved npm: %s@%s docs=%s", library, version, docs_url)
+            version_tag = meta.get("_version_tag")  # set when version not on npm but GitHub exists
+            logger.info("Resolved npm: %s@%s docs=%s tag=%s", library, version, docs_url, version_tag)
 
         elif request.input_type == InputType.pypi:
             meta = await resolve_pypi_package(request.input)
@@ -160,15 +162,21 @@ async def _run_pipeline(job_id: str, request: ContextRequest) -> None:
 
         else:
             # npm or pypi: crawl the resolved docs URL
-            if docs_url:
+            if version_tag and not docs_url:
+                # Version not on npm but GitHub repo known — use git tag directly
+                from ..services.ingestion.github_ingester import ingest_github_repo
+                repo_url = meta.get("repository", "")
+                import re as _re
+                repo_url = _re.sub(r"^git\+", "", repo_url)
+                logger.info("Using GitHub tag %s for %s", version_tag, repo_url)
+                raw_docs = await ingest_github_repo(repo_url, version_tag=version_tag)
+            elif docs_url:
                 if "github.com" in docs_url:
-                    # GitHub repo URLs → use the GitHub ingester (README + /docs)
                     from ..services.ingestion.github_ingester import ingest_github_repo
-                    raw_docs = await ingest_github_repo(docs_url)
+                    raw_docs = await ingest_github_repo(docs_url, version_tag=version_tag)
                 else:
                     raw_docs = await crawl_url(docs_url)
             else:
-                # No homepage found
                 logger.warning("No docs URL found for %s, using npm README only", library)
                 raw_docs = f"Library: {library}\nVersion: {version}\nNo documentation URL found."
 

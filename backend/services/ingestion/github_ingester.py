@@ -8,7 +8,6 @@ Clones the repository (shallow), extracts:
 """
 
 import logging
-import os
 import re
 import subprocess
 import tempfile
@@ -17,22 +16,41 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-async def ingest_github_repo(repo_url: str) -> str:
+async def ingest_github_repo(repo_url: str, version_tag: str | None = None) -> str:
     """
     Shallow clone the repo and extract documentation content.
+    When version_tag is given, tries to clone at that exact git tag
+    (e.g. 'v2.1.4' then '2.1.4') before falling back to the default branch.
     Returns combined Markdown string.
     """
     repo_url = _normalize_github_url(repo_url)
-    logger.info("Cloning GitHub repo: %s", repo_url)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Shallow clone — we only need docs, not full history
-        result = subprocess.run(
-            ["git", "clone", "--depth=1", "--quiet", repo_url, tmpdir],
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
+        result = None
+
+        # Try exact version tag first (v2.1.4, then 2.1.4)
+        if version_tag:
+            for tag in [f"v{version_tag}", version_tag]:
+                logger.info("Cloning GitHub repo %s at tag %s", repo_url, tag)
+                result = subprocess.run(
+                    ["git", "clone", "--depth=1", "--quiet", "--branch", tag, repo_url, tmpdir],
+                    capture_output=True, text=True, timeout=120,
+                )
+                if result.returncode == 0:
+                    logger.info("Cloned at tag %s", tag)
+                    break
+            else:
+                logger.warning("Tag %s not found in %s — falling back to default branch", version_tag, repo_url)
+                result = None
+
+        # Default branch (no tag requested, or tag not found)
+        if result is None or result.returncode != 0:
+            logger.info("Cloning GitHub repo: %s (default branch)", repo_url)
+            result = subprocess.run(
+                ["git", "clone", "--depth=1", "--quiet", repo_url, tmpdir],
+                capture_output=True, text=True, timeout=120,
+            )
+
         if result.returncode != 0:
             raise RuntimeError(f"git clone failed: {result.stderr}")
 

@@ -83,7 +83,7 @@ function printHelp() {
   console.log(opt("--type <type>",   "npm | pypi | url | github | paste", "auto-detected"));
   console.log(opt("--format <fmt>",  "context_md | json", "context_md"));
   console.log(opt("--output <file>", "Output file path", ".context.md"));
-  console.log(opt("--append",        "Append to existing file instead of overwriting"));
+  console.log(opt("--overwrite",     "Overwrite existing file (default: append)"));
   console.log(opt("--backend <url>", "Backend URL", DEFAULT_BACKEND));
   console.log(opt("--help",          "Show this help"));
   console.log();
@@ -111,7 +111,8 @@ for (let i = 1; i < args.length; i++) {
 const BACKEND = process.env.DOCFORGE_BACKEND || flags.backend || DEFAULT_BACKEND;
 const OUTPUT_FILE = flags.output || ".context.md";
 const OUTPUT_FORMAT = flags.format || "context_md";
-const APPEND = !!flags.append;
+// Append is the default — use --overwrite to start fresh
+const OVERWRITE = !!flags.overwrite;
 
 // ── HTTP helpers ───────────────────────────────────────────────────────────
 function request(method, url, body) {
@@ -196,7 +197,7 @@ function writeOutput(content, label) {
     ? fullPath.replace(/\.[^.]+$/, ext)
     : fullPath;
 
-  if (APPEND && fs.existsSync(finalPath)) {
+  if (!OVERWRITE && fs.existsSync(finalPath)) {
     const existing = fs.readFileSync(finalPath, "utf-8").trimEnd();
     fs.writeFileSync(finalPath, existing + "\n\n---\n\n" + content);
     console.log(`  ${gn("↓")} Appended to ${bl(finalPath)}`);
@@ -240,8 +241,6 @@ async function runDetect() {
     const result = await generateContext(packages[i]);
     if (result.output) {
       writeOutput(result.output, packages[i]);
-      // After first package, always append
-      if (!APPEND) flags.append = true;
     }
   }
 
