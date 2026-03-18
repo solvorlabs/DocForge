@@ -1,0 +1,67 @@
+/* Base Button */
+.game-btn {
+  padding: 14px 28px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.25s ease-in-out;
+  margin: 10px;
+}
+
+/* 1. Retro Pixel Button */
+.retro-btn {
+  background: #ff0040;
+  color: white;
+  font-family: "Press Start 2P", cursive;
+  border: 4px solid #fff;
+  box-shadow: 4px 4px 0 #000;
+}
+.retro-btn:hover {
+  background: #ff3366;
+  box-shadow: 2px 2px 0 #000;
+  transform: translate(-2px, -2px);
+}
+
+/* 2. Neon Glow Button */
+.neon-btn {
+  background: transparent;
+  color: #0ff;
+  border: 2px solid #0ff;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-family: "Orbitron", sans-serif;
+  box-shadow: 0 0 10px #0ff, 0 0 20px #0ff inset;
+}
+.neon-btn:hover {
+  background: #0ff;
+  color: #000;
+  box-shadow: 0 0 20px #0ff, 0 0 40px #0ff;
+}
+
+/* 3. Arcade Candy Button */
+.arcade-btn {
+  background: linear-gradient(45deg, #ffcc00, #ff6600);
+  color: #fff;
+  border-radius: 12px;
+  font-family: "Fredoka One", cursive;
+  box-shadow: 0 5px #cc5200;
+}
+.arcade-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px #cc5200;
+}
+
+/* 4. Minimal Futuristic Button */
+.minimal-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border: 2px solid #fff;
+  border-radius: 6px;
+  font-family: "Roboto", sans-serif;
+}
+.minimal-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}

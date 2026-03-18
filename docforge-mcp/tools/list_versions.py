@@ -5,7 +5,7 @@ List all cached versions of a package to decide which version's context to fetch
 Useful when you need version-specific API differences.
 """
 
-from ..client import list_versions
+from client import list_versions
 
 
 async def handle(package: str) -> str:

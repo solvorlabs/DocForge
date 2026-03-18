@@ -15,6 +15,8 @@ import re
 import time
 from datetime import date
 
+import asyncio
+
 import httpx
 
 logger = logging.getLogger(__name__)
@@ -81,7 +83,7 @@ CRITICAL — You must specifically hunt for:
 4. All props with their TypeScript types, whether they are required, and default values.
 5. Version-specific API differences if mentioned in the docs.
 
-Return ONLY valid JSON (no markdown code fences, no explanation) in EXACTLY this schema:
+Return ONLY valid JSON (no markdown code fences, no explanation, no extra whitespace) in EXACTLY this schema:
 {schema}
 
 If the documentation mentions multiple components or modules, include each as a separate entry in "components".
@@ -92,20 +94,30 @@ Raw documentation:
 {raw_docs}"""
 
 
-async def structure_with_gemini(library: str, version: str, raw_docs: str) -> dict:
+async def structure_with_gemini(
+    library: str,
+    version: str,
+    raw_docs: str,
+    gemini_key: str | None = None,
+    groq_key: str | None = None,
+) -> dict:
     """
-    Call Gemini 1.5 Flash to structure raw documentation into our JSON schema.
+    Call Gemini 2.0 Flash to structure raw documentation into our JSON schema.
 
-    Uses a truncated version of raw_docs if it exceeds the safe context limit
-    (~800k chars) to avoid token limit errors.
+    gemini_key / groq_key — per-user keys that override environment variables.
+    Falls back to env vars when not provided.
     """
-    if not GEMINI_API_KEY:
+    effective_gemini = gemini_key or GEMINI_API_KEY
+    effective_groq   = groq_key   or GROQ_API_KEY
+
+    if not effective_gemini:
         logger.warning("GEMINI_API_KEY not set, using mock structurer")
         return _mock_structure(library, version)
 
-    # Truncate to ~300k chars — Gemini 1.5 Flash has a 1M token context but
-    # quality degrades with very long docs; keep the most relevant first pages.
-    max_doc_chars = 300_000
+    # Truncate to ~80k chars — keeps Gemini token usage around 20k per request,
+    # which is much friendlier to the free tier daily quota (1M tokens/day).
+    # Quality is maintained: the most relevant documentation is always first.
+    max_doc_chars = 80_000
     truncated = raw_docs[:max_doc_chars]
     if len(raw_docs) > max_doc_chars:
         logger.info("Truncated docs from %d to %d chars for Gemini", len(raw_docs), max_doc_chars)
@@ -124,6 +136,7 @@ async def structure_with_gemini(library: str, version: str, raw_docs: str) -> di
         "generationConfig": {
             "temperature": 0.1,
             "maxOutputTokens": 8192,
+            "responseMimeType": "application/json",
         },
     }
 
@@ -131,7 +144,7 @@ async def structure_with_gemini(library: str, version: str, raw_docs: str) -> di
         async with httpx.AsyncClient(timeout=120) as client:
             resp = await client.post(
                 GEMINI_ENDPOINT,
-                params={"key": GEMINI_API_KEY},
+                params={"key": effective_gemini},
                 json=payload,
             )
             if resp.status_code == 429:
@@ -157,15 +170,18 @@ async def structure_with_gemini(library: str, version: str, raw_docs: str) -> di
         raise
 
     # ── Groq fallback ────────────────────────────────────────────────────────
-    return await _structure_with_groq(library, version, raw_docs, t0)
+    return await _structure_with_groq(library, version, raw_docs, t0, groq_key=effective_groq)
 
 
-async def _structure_with_groq(library: str, version: str, raw_docs: str, t0: float) -> dict:
+async def _structure_with_groq(
+    library: str, version: str, raw_docs: str, t0: float, groq_key: str | None = None
+) -> dict:
     """Call Groq (LLaMA 3.3 70B) as a fallback when Gemini quota is exhausted."""
-    if not GROQ_API_KEY:
+    effective_groq = groq_key or GROQ_API_KEY
+    if not effective_groq:
         raise RuntimeError(
-            "Gemini quota exceeded and GROQ_API_KEY is not set. "
-            "Add GROQ_API_KEY to your .env (free at console.groq.com) to enable fallback."
+            "Gemini quota exceeded and no Groq key available. "
+            "Add a Groq key in your DocForge settings (free at console.groq.com)."
         )
 
     truncated = raw_docs[:GROQ_MAX_DOC_CHARS]
@@ -184,17 +200,36 @@ async def _structure_with_groq(library: str, version: str, raw_docs: str, t0: fl
         "model": GROQ_MODEL,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.1,
-        "max_tokens": 8192,
+        "max_tokens": 32768,
     }
 
-    async with httpx.AsyncClient(timeout=120) as client:
-        resp = await client.post(
-            GROQ_ENDPOINT,
-            headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
-            json=payload,
-        )
+    # Retry up to 3 times on 429 with exponential backoff
+    retry_delays = [10, 30, 60]
+    for attempt, delay in enumerate(retry_delays):
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.post(
+                GROQ_ENDPOINT,
+                headers={"Authorization": f"Bearer {effective_groq}"},
+                json=payload,
+            )
+
+        if resp.status_code == 429:
+            if attempt < len(retry_delays) - 1:
+                logger.warning(
+                    "Groq rate limited for %s@%s — waiting %ds before retry %d/3",
+                    library, version, delay, attempt + 1,
+                )
+                await asyncio.sleep(delay)
+                continue
+            raise RuntimeError(
+                f"Groq rate limit exceeded for {library}@{version}. "
+                "Both Gemini and Groq are rate-limited. Wait a minute and try again, "
+                "or add a fresh API key in DocForge settings."
+            )
+
         resp.raise_for_status()
         data = resp.json()
+        break
 
     elapsed = time.time() - t0
     logger.info("Groq structuring took %.1fs for %s@%s", elapsed, library, version)

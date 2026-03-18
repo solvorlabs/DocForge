@@ -1,0 +1,141 @@
+/* Legal Pages (Privacy Policy & Terms of Service) Styling */
+
+.legal-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #fffef9 0%, #fff9e6 100%);
+   
+}
+
+.legal-header {
+  padding: 3rem 0 2rem;
+  background: linear-gradient(135deg, #a29bfe 0%, #74b9ff 100%);
+  border-bottom: 4px solid var(--doodle-ink, #2d3436);
+  position: relative;
+}
+
+.legal-header::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--doodle-yellow, #fdcb6e) 0px,
+    var(--doodle-yellow, #fdcb6e) 10px,
+    transparent 10px,
+    transparent 20px
+  );
+}
+
+.back-button {
+  transition: all 0.2s ease;
+}
+
+.legal-content {
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.legal-section {
+  position: relative;
+}
+
+.section-icon {
+  transition: all 0.3s ease;
+}
+
+.section-icon:hover {
+  transform: rotate(-5deg) scale(1.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .legal-header {
+    padding: 2rem 0 1.5rem;
+  }
+
+  .legal-content {
+    padding: 2rem 1.5rem !important;
+  }
+
+  .legal-section h4 {
+    font-size: 1.3rem !important;
+  }
+
+  .section-icon {
+    padding: 1rem !important;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .legal-header,
+  .back-button {
+    display: none;
+  }
+
+  .legal-page {
+    background: white;
+  }
+
+  .legal-content {
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection Color */
+::selection {
+  background-color: var(--doodle-yellow, #fdcb6e);
+  color: var(--doodle-ink, #2d3436);
+}
+
+/* Link Styling within Legal Content */
+.legal-content a {
+  color: var(--doodle-blue, #74b9ff);
+  text-decoration: underline;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.legal-content a:hover {
+  color: var(--doodle-purple, #a29bfe);
+}
+
+/* Highlight Boxes */
+.legal-content strong {
+  color: var(--doodle-ink, #2d3436);
+  font-weight: 700;
+}
+
+/* List Styling */
+.legal-content ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.legal-content ul li::before {
+  content: "→";
+  color: var(--doodle-blue, #74b9ff);
+  font-weight: bold;
+  display: inline-block;
+  width: 1.5em;
+  margin-left: -1.5em;
+}

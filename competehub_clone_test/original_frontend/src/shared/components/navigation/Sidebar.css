@@ -1,0 +1,271 @@
+/* components/layout/Sidebar.css */
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.sidebar {
+    position: sticky;
+    top: 72px;
+    left: 0;
+    height: calc(100vh - 80px);
+    background: transparent;
+    border: none;
+    display: flex;
+    flex-direction: row;
+    transition: width 0.3s ease-in-out;
+    margin-right: 20px;
+}
+
+.sidebar.sidebar-full {
+    width: 300px;
+}
+
+.sidebar.sidebar-compact {
+    width: 80px;
+}
+
+/* Notebook Spine (Left) */
+.notebook-spine {
+    width: 40px;
+    background: linear-gradient(90deg, #dcdcdc 0%, #f0f0f0 40%, #ffffff 50%, #dcdcdc 100%);
+    border-right: 1px solid #bbb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: inset -2px 0 5px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+    flex-shrink: 0;
+}
+
+.spine-text {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    font-weight: 700;
+    font-size: 1.4rem;
+    color: #444;
+    white-space: nowrap;
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.5);
+}
+
+/* Spiral Binding (Middle) */
+.notebook-spiral {
+    width: 30px;
+    background: #e8e8e8;
+    position: relative;
+    z-index: 3;
+    flex-shrink: 0;
+    box-shadow: inset 5px 0 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Holes */
+.notebook-spiral::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 2px;
+    width: 8px;
+    background: radial-gradient(circle, #333 30%, transparent 40%);
+    background-size: 100% 40px;
+    /* Match line height */
+    background-position: 0 20px;
+}
+
+/* Wire Loops */
+.notebook-spiral::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 5px;
+    right: -5px;
+    background: repeating-linear-gradient(-15deg,
+            transparent,
+            transparent 36px,
+            #555 36px,
+            /* Wire dark */
+            #888 37px,
+            /* Wire light */
+            #555 38px,
+            transparent 38px,
+            transparent 40px);
+    filter: drop-shadow(2px 2px 1px rgba(0, 0, 0, 0.2));
+}
+
+/* Notebook Page (Right) */
+.notebook-page {
+    flex: 1;
+    background: white;
+    /* Grid paper pattern */
+    /* background-image:
+        linear-gradient(#e5e5e5 1px, transparent 1px),
+        linear-gradient(90deg, #e5e5e5 1px, transparent 1px); */
+    border-right: 4px solid #3c90ff;
+    background-size: 20px 20px;
+    background-position: 0 0;
+
+    /* Red margin line */
+    border-left: 2px solid #ff9999;
+
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    /* Paper shadow */
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 0 5px 5px 0;
+
+    /* Hide scrollbar */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    /* Animation */
+    transform-origin: left center;
+    animation: unfoldPage 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+
+    /* Tilt */
+    /* transform: rotate(-1deg); */
+    margin: 10px 0 10px 0;
+
+    /* Squiggly Border Effect using radial gradient mask */
+    -webkit-mask-image: radial-gradient(circle at right, transparent 5px, black 6px);
+    mask-image: radial-gradient(circle at right, transparent 5px, black 6px);
+    -webkit-mask-size: 100% 20px;
+    mask-size: 100% 20px;
+    -webkit-mask-position: 0 0;
+    mask-position: 0 0;
+    -webkit-mask-repeat: repeat-y;
+    mask-repeat: repeat-y;
+}
+
+
+.notebook-page::-webkit-scrollbar {
+    display: none;
+}
+
+/* Navigation Items */
+.sidebar-navigation {
+    padding: 0;
+    margin-top: 10px;
+}
+
+.sidebar-nav-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 40px;
+    /* Match line height exactly */
+    padding: 0 16px;
+    background: none;
+    border: none;
+    color: #333;
+     
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    position: relative;
+    /* Align text to sit on the line */
+    line-height: 40px;
+}
+
+.sidebar-nav-item:hover {
+    color: #4A90E2;
+    padding-left: 20px;
+    /* Slight movement */
+}
+
+.sidebar-nav-item.active {
+    color: #4A90E2;
+    font-weight: 800;
+}
+
+/* Marker highlight for active item */
+.sidebar-nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 5px;
+    height: 10px;
+    /* background: rgba(74, 144, 226, 0.2); */
+    border-radius: 5px;
+    z-index: -1;
+    transform: rotate(-1deg);
+}
+
+.nav-icon {
+    width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.coming-soon-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    background: #FF6B35;
+    color: white;
+    border-radius: 12px;
+    font-weight: 600;
+    margin-left: auto;
+    line-height: normal;
+}
+
+/* Footer */
+.sidebar-footer {
+    /* margin-top: auto; */
+    padding: 10px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #888;
+    /* width: fit-content; */
+    margin: auto;
+}
+
+/* Compact Mode */
+/* .sidebar.sidebar-compact .notebook-page {
+    display: none;
+} */
+
+/* Mobile */
+@media (max-width: 1032px) {
+    .notebook-spiral {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        top: 0;
+        height: 100vh;
+        width: 100%;
+        max-width: 300px;
+    }
+
+}
+
+@keyframes unfoldPage {
+    0% {
+        transform: perspective(1000px) rotateY(-90deg);
+        opacity: 0;
+    }
+
+    100% {
+        transform: perspective(1000px) rotateY(0);
+        opacity: 1;
+    }
+}

@@ -39,37 +39,12 @@ async def resolve_npm_package(package_input: str) -> dict:
         url = f"{NPM_REGISTRY}/{resolved_name}/{version}"
         resp = await client.get(url)
 
-        if resp.status_code == 404 and version != "latest":
-            # Version not published on npm. Try to find a GitHub repo so we can
-            # clone the exact git tag for that version instead of giving up.
-            pkg_resp = await client.get(f"{NPM_REGISTRY}/{resolved_name}")
-            if pkg_resp.status_code == 200:
-                pkg_data = pkg_resp.json()
-                dist_tags = pkg_data.get("dist-tags", {})
-                latest_ver = dist_tags.get("latest", "")
-                latest_meta = pkg_data.get("versions", {}).get(latest_ver, {})
-                repo_url = (latest_meta.get("repository") or {}).get("url", "")
-                if repo_url and "github.com" in repo_url:
-                    logger.info(
-                        "npm %s@%s not on registry — found GitHub repo %s, will try git tag",
-                        resolved_name, version, repo_url,
-                    )
-                    return {
-                        "name": resolved_name,
-                        "version": version,          # keep the version the user asked for
-                        "description": pkg_data.get("description"),
-                        "homepage": None,
-                        "repository": repo_url,
-                        "keywords": pkg_data.get("keywords", []),
-                        "_version_tag": version,     # signal: use GitHub ingester at this tag
-                    }
-
-                latest_hint = f" Latest on npm: {latest_ver}." if latest_ver else ""
-                raise ValueError(
-                    f"{resolved_name}@{version} was not found on npm.{latest_hint}"
-                )
-
-            raise ValueError(f"{resolved_name}@{version} was not found on npm.")
+        if resp.status_code == 404:
+            result = await _resolve_not_found(client, resolved_name, version)
+            if result:
+                return result
+            suffix = f"@{version}" if version != "latest" else ""
+            raise ValueError(f"'{resolved_name}{suffix}' was not found on npm or any known registry.")
 
         resp.raise_for_status()
         data = resp.json()
@@ -189,6 +164,17 @@ def _parse_npm_input(package_input: str) -> tuple[str, str]:
             "Use input_type='url' instead."
         )
 
+    # Reject filenames mistaken for package names (package.json, tsconfig.json, etc.)
+    _KNOWN_FILENAMES = {
+        "package.json", "package-lock.json", "yarn.lock", "pnpm-lock.yaml",
+        "npm-shrinkwrap.json", "tsconfig.json", ".npmrc", ".nvmrc",
+    }
+    if package_input.lower() in _KNOWN_FILENAMES:
+        raise ValueError(
+            f"'{package_input}' is a filename, not an npm package name. "
+            "Pass the actual package name (e.g. 'react', 'lodash')."
+        )
+
     if package_input.startswith("@"):
         # Scoped package: extract @scope/name, then optionally @version
         m = re.match(r'^(@[A-Za-z0-9._-]+/[A-Za-z0-9._-]+)(?:@([^\s"\':]*))?', package_input)
@@ -222,6 +208,121 @@ def _parse_npm_input(package_input: str) -> tuple[str, str]:
         version = fallback.group(1) if fallback else "latest"
 
     return name.strip(), version
+
+
+async def _resolve_not_found(
+    client: httpx.AsyncClient,
+    name: str,
+    version: str,
+) -> dict | None:
+    """
+    Full cascade for when npm returns 404 on a package.
+
+    1. Fetch npm package root (exists even when a specific version doesn't)
+       → version-specific 404: return GitHub tag metadata so pipeline can
+         clone the exact git tag.
+    2. Extract GitHub URL from npm root data (or search GitHub if not found).
+    3. Run copy-paste detection (jsrepo / shadcn registry / README patterns /
+       no-dist-exports).
+    4. Fall back to plain GitHub ingestion if the repo is found but isn't
+       a copy-paste library.
+    """
+    github_url: str | None = None
+    homepage:   str | None = None
+    npm_root:   dict | None = None
+
+    # ── Step 1: npm package root ──────────────────────────────────────────────
+    pkg_resp = await client.get(f"{NPM_REGISTRY}/{name}")
+    if pkg_resp.status_code == 200:
+        npm_root = pkg_resp.json()
+        dist_tags  = npm_root.get("dist-tags") or {}
+        latest_ver = dist_tags.get("latest", "")
+        homepage   = npm_root.get("homepage")
+
+        # For a version-specific 404: try GitHub git-tag ingestion first
+        if version != "latest" and latest_ver:
+            latest_meta = (npm_root.get("versions") or {}).get(latest_ver, {})
+            repo_url = (latest_meta.get("repository") or {}).get("url", "")
+            if repo_url and "github.com" in repo_url:
+                logger.info(
+                    "npm %s@%s not on registry — GitHub repo found (%s), will try git tag",
+                    name, version, repo_url,
+                )
+                return {
+                    "name": name,
+                    "version": version,
+                    "description": npm_root.get("description"),
+                    "homepage": None,
+                    "repository": repo_url,
+                    "keywords": npm_root.get("keywords", []),
+                    "_version_tag": version,
+                }
+            latest_hint = f" Latest on npm: {latest_ver}." if latest_ver else ""
+            logger.warning("npm %s@%s not found.%s Running copy-paste detection.", name, version, latest_hint)
+
+        # Extract GitHub URL from latest version metadata
+        if latest_ver:
+            latest_meta = (npm_root.get("versions") or {}).get(latest_ver, {})
+            repo_url = (latest_meta.get("repository") or {}).get("url", "")
+            if "github.com" in repo_url:
+                github_url = repo_url
+
+    # ── Step 2: GitHub search if repo still unknown ───────────────────────────
+    if not github_url:
+        github_url = await _github_search(client, name)
+
+    # ── Step 3: Copy-paste detection ──────────────────────────────────────────
+    if github_url or homepage:
+        from .copypaste_ingester import detect_and_ingest
+        result = await detect_and_ingest(
+            name=name,
+            github_url=github_url,
+            homepage=homepage or github_url,
+            npm_data=npm_root,
+        )
+        if result:
+            return result
+
+    # ── Step 4: Plain GitHub fallback (repo found, not copy-paste) ───────────
+    if github_url:
+        logger.info("npm '%s' not found — falling back to GitHub ingestion: %s", name, github_url)
+        return {
+            "name": name,
+            "version": version if version != "latest" else "latest",
+            "description": (npm_root or {}).get("description"),
+            "homepage": homepage or github_url,
+            "repository": github_url,
+            "keywords": (npm_root or {}).get("keywords", []),
+        }
+
+    return None
+
+
+async def _github_search(client: httpx.AsyncClient, name: str) -> str | None:
+    """Search GitHub repositories for the most likely match for this package name."""
+    # Clean up scoped names (@scope/pkg → scope pkg) for better search results
+    query = name.lstrip("@").replace("/", " ").replace("-", " ")
+    url = (
+        f"https://api.github.com/search/repositories"
+        f"?q={query}&per_page=3&sort=stars&order=desc"
+    )
+    try:
+        resp = await client.get(
+            url,
+            headers={"User-Agent": "docforge/1.0", "Accept": "application/vnd.github+json"},
+        )
+        if resp.is_success:
+            items = resp.json().get("items", [])
+            if items:
+                # Prefer repos whose name closely matches the package name
+                clean_name = name.lstrip("@").split("/")[-1].lower()
+                for item in items:
+                    if clean_name in item.get("name", "").lower():
+                        return item["html_url"]
+                return items[0]["html_url"]
+    except Exception as exc:
+        logger.warning("GitHub search failed for '%s': %s", name, exc)
+    return None
 
 
 def _extract_github_pages(data: dict) -> str | None:

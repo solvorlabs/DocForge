@@ -27,13 +27,17 @@ Configure in Claude Desktop:
 
 import asyncio
 import logging
+import os
 import sys
+
+# Allow running as a plain script: python docforge-mcp/server.py
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from mcp.server import Server  # type: ignore[import]
 from mcp.server.stdio import stdio_server  # type: ignore[import]
 from mcp import types  # type: ignore[import]
 
-from .tools import get_context, search_library, list_versions
+from tools import get_context, search_library, list_versions
 
 logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 logger = logging.getLogger(__name__)

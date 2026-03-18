@@ -1,0 +1,349 @@
+/* DailyChallenges.css - Doodle Art Style */
+.daily-challenges {
+  margin-bottom: 30px;
+}
+
+.challenges-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  position: relative;
+}
+
+.challenges-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: bold;
+  text-align: center;
+  color: var(--doodle-secondary);
+   
+  display: flex;
+  align-items: center;
+}
+
+.challenges-decoration {
+  font-size: 1.2rem;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+.challenges-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.challenge-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-radius: 10px;
+  border: 2px solid var(--doodle-ink);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  background: var(--doodle-paper);
+   
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.challenge-card:hover:not(.coming-soon) {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.15);
+  border-color: var(--doodle-accent);
+}
+
+.challenge-card.coming-soon {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
+}
+
+.challenge-card.completed {
+  background: linear-gradient(135deg, var(--doodle-green-light), var(--doodle-green));
+  color: white;
+  border-color: var(--doodle-green);
+}
+
+/* Doodle Decorations */
+.doodle-decoration {
+  position: absolute;
+  font-size: 1rem;
+  opacity: 0.3;
+  animation: float 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.doodle-decoration-1 {
+  top: 5px;
+  right: 10px;
+  animation-delay: 0s;
+}
+
+.doodle-decoration-2 {
+  bottom: 5px;
+  left: 10px;
+  animation-delay: 1.5s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-3px) rotate(5deg); }
+}
+
+/* Challenge Icon */
+.challenge-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin-right: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+}
+
+.challenge-card:hover .challenge-icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* Challenge Info */
+.challenge-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.challenge-title {
+  font-size: 0.8rem;
+  font-weight: bold;
+   
+  color: var(--doodle-ink);
+}
+
+.challenge-card.completed .challenge-title {
+  color: white;
+}
+
+.challenge-date {
+  font-size: 0.7rem;
+  color: var(--doodle-secondary);
+   
+}
+
+.challenge-card.completed .challenge-date {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.coming-soon-text {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+   
+}
+
+/* Challenge Action */
+.challenge-action {
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+}
+
+.challenge-arrow {
+  color: var(--doodle-accent);
+  transition: all 0.3s ease;
+}
+
+.challenge-card:hover .challenge-arrow {
+  transform: translateX(3px);
+  color: var(--doodle-green);
+}
+
+.coming-soon-badge {
+  background: var(--doodle-orange);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.6rem;
+  font-weight: bold;
+   
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.completed-badge {
+  background: var(--doodle-green);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Progress Bar */
+.challenge-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 0 0 10px 10px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.1);
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--doodle-accent), var(--doodle-green));
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.progress-text {
+  position: absolute;
+  bottom: -20px;
+  right: 0;
+  font-size: 0.6rem;
+  color: var(--doodle-secondary);
+   
+}
+
+/* Doodle Border Effects */
+.doodle-border {
+  position: absolute;
+  background: rgba(0,0,0,0.05);
+  pointer-events: none;
+}
+
+.doodle-border-top {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  border-radius: 10px 10px 0 0;
+}
+
+.doodle-border-right {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  border-radius: 0 10px 10px 0;
+}
+
+.doodle-border-bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  border-radius: 0 0 10px 10px;
+}
+
+.doodle-border-left {
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  border-radius: 10px 0 0 10px;
+}
+
+/* Footer */
+.challenges-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+  padding: 10px;
+  background: linear-gradient(135deg, var(--doodle-accent-light), var(--doodle-green-light));
+  border-radius: 15px;
+  border: 2px dashed var(--doodle-accent);
+}
+
+.footer-decoration {
+  font-size: 1.2rem;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+.footer-decoration:nth-child(3) {
+  animation-delay: 1s;
+}
+
+.footer-text {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: var(--doodle-ink);
+   
+  text-align: center;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .challenge-card {
+    padding: 10px;
+  }
+  
+  .challenge-icon {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .challenge-title {
+    font-size: 0.75rem;
+  }
+  
+  .challenge-date {
+    font-size: 0.65rem;
+  }
+  
+  .doodle-decoration {
+    font-size: 0.8rem;
+  }
+  
+  .footer-text {
+    font-size: 0.7rem;
+  }
+}

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/compihub.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CompeteHub – Multiplayer Knowledge Battles for JEE, NEET &amp; GATE</title>
+  <meta
+    name="description"
+    content="CompeteHub turns exam prep into gaming. Play 5v5 multiplayer knowledge battles, ranked 1v1 duels and solo practice modes built on JEE, NEET &amp; GATE question banks."
+  />
+  <meta
+    name="keywords"
+    content="CompeteHub, multiplayer quiz game, 5v5 knowledge battle, JEE NEET GATE preparation, competitive learning platform, online question bank"
+  />
+  <link rel="stylesheet" href="src/styles/global/index.css">
+  <!-- MathJax Configuration and CDN -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+      }
+    };
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-EMHRBWQ9N3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-EMHRBWQ9N3');
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
+</html>

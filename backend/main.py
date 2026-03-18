@@ -23,7 +23,7 @@ load_dotenv()
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .routers import context, corrections, search, versions
+from .routers import auth, context, corrections, search, versions, oauth
 
 # ── Logging setup ─────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -63,6 +63,8 @@ async def log_request_time(request: Request, call_next):
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
+app.include_router(auth.router)
+app.include_router(oauth.router)
 app.include_router(context.router)
 app.include_router(corrections.router)
 app.include_router(search.router)

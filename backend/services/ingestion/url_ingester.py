@@ -12,7 +12,10 @@ import asyncio
 import logging
 import os
 import random
+import re
 from urllib.parse import urlparse
+
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -118,6 +121,63 @@ async def crawl_url(url: str, max_pages: int = 15) -> str:
     Entry point: try Playwright first (handles JS sites), fall back to static.
     """
     return await crawl_with_playwright(url, max_pages)
+
+
+# Repo path segments that are not a real repo root
+_GH_EXCLUDED_OWNERS = frozenset({
+    "sponsors", "features", "pricing", "enterprise", "about",
+    "login", "join", "organizations", "apps", "marketplace",
+})
+_GH_EXCLUDED_REPOS = frozenset({
+    "issues", "pulls", "discussions", "actions", "releases",
+    "commits", "blob", "tree", "wiki", "pulse",
+})
+
+
+async def extract_github_url(url: str) -> str | None:
+    """
+    Quick static fetch of a URL to extract a GitHub repo link from its HTML.
+
+    Most library/component sites link to their GitHub repo in the header,
+    footer, or meta tags. This is fast (no browser), works even on JS-heavy
+    sites because meta tags are server-rendered.
+
+    Returns the first clean 'https://github.com/{owner}/{repo}' found,
+    or None if nothing is found.
+    """
+    try:
+        async with httpx.AsyncClient(
+            timeout=10,
+            follow_redirects=True,
+            headers={"User-Agent": "docforge/1.0 (documentation indexer)"},
+        ) as client:
+            resp = await client.get(url)
+            if not resp.is_success:
+                return None
+            html = resp.text
+    except Exception as exc:
+        logger.debug("extract_github_url fetch failed for %s: %s", url, exc)
+        return None
+
+    # Match all github.com/{owner}/{repo} occurrences in the raw HTML
+    matches = re.findall(
+        r'https?://github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)',
+        html,
+    )
+
+    seen: set[str] = set()
+    for owner, repo in matches:
+        if owner.lower() in _GH_EXCLUDED_OWNERS:
+            continue
+        repo = repo.rstrip("/").split("/")[0].removesuffix(".git")
+        if repo.lower() in _GH_EXCLUDED_REPOS:
+            continue
+        key = f"{owner}/{repo}"
+        if key not in seen:
+            seen.add(key)
+            return f"https://github.com/{owner}/{repo}"
+
+    return None
 
 
 def _is_doc_link(url: str) -> bool:

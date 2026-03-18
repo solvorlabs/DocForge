@@ -1,0 +1,57 @@
+/* Home Layout Styles - Ensures proper spacing with sidebar and navbar */
+
+.home-page-container {
+  min-height: 100vh;
+  width: 100%;
+  padding-top: 60px; /* Account for fixed navbar */
+  overflow-x: hidden;
+}
+
+/* Ensure content doesn't overflow and is scrollable */
+.home-page-content {
+  width: 100%;
+  max-width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Gaming platform layout */
+.gaming-platform-container {
+  width: 100%;
+  min-height: calc(100vh - 60px);
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Desktop adjustments for sidebar */
+@media (min-width: 1024px) {
+  .gaming-platform-container {
+    padding: 30px 40px;
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .home-page-container {
+    padding-top: 60px;
+  }
+  
+  .gaming-platform-container {
+    padding: 15px;
+  }
+}
+
+/* Ensure modals and overlays work properly */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+  overflow: hidden;
+}

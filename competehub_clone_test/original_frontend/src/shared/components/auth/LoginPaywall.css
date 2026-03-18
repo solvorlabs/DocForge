@@ -1,0 +1,128 @@
+/* LoginPaywall.css */
+.login-paywall-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.login-paywall-paper {
+  padding: 40px;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.login-paywall-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+
+.login-paywall-modal {
+  max-width: 500px;
+  width: 90%;
+  padding: 40px;
+  border-radius: 16px;
+  background: white;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-paywall-content {
+  text-align: center;
+}
+
+.paywall-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 24px;
+  color: #667eea;
+}
+
+.paywall-title {
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 16px;
+}
+
+.paywall-message {
+  color: #666;
+  margin-bottom: 32px;
+  font-size: 16px;
+}
+
+.paywall-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
+  text-align: left;
+}
+
+.benefit-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.benefit-item:hover {
+  background: #e9ecef;
+  transform: translateX(4px);
+}
+
+.benefit-icon {
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.paywall-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .login-paywall-paper,
+  .login-paywall-modal {
+    padding: 24px;
+  }
+
+  .paywall-title {
+    font-size: 24px;
+  }
+
+  .paywall-message {
+    font-size: 14px;
+  }
+
+  .benefit-item {
+    padding: 10px;
+  }
+}

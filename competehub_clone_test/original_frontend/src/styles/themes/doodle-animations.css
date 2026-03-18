@@ -1,0 +1,426 @@
+/* Additional Doodle Animations and Interactive Elements */
+
+/* Floating doodle elements */
+.doodle-float {
+  animation: doodle-float 3s ease-in-out infinite;
+}
+
+@keyframes doodle-float {
+  0%, 100% {
+    transform: translateY(0px) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(1deg);
+  }
+}
+
+/* Shake animation for errors */
+.doodle-shake {
+  animation: doodle-shake 0.5s ease-in-out;
+}
+
+@keyframes doodle-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px) rotate(-1deg); }
+  75% { transform: translateX(5px) rotate(1deg); }
+}
+
+/* Success pulse animation */
+.doodle-success {
+  animation: doodle-success 1s ease-out;
+}
+
+@keyframes doodle-success {
+  0% { 
+    transform: scale(1) rotate(-1deg);
+    background: var(--doodle-paper);
+  }
+  50% { 
+    transform: scale(1.05) rotate(0deg);
+    background: linear-gradient(45deg, #c6f6d5, #fff);
+  }
+  100% { 
+    transform: scale(1) rotate(1deg);
+    background: var(--doodle-paper);
+  }
+}
+
+/* Error pulse animation */
+.doodle-error {
+  animation: doodle-error 1s ease-out;
+}
+
+@keyframes doodle-error {
+  0% { 
+    transform: scale(1) rotate(1deg);
+    background: var(--doodle-paper);
+  }
+  50% { 
+    transform: scale(1.05) rotate(0deg);
+    background: linear-gradient(45deg, #fed7d7, #fff);
+  }
+  100% { 
+    transform: scale(1) rotate(-1deg);
+    background: var(--doodle-paper);
+  }
+}
+
+/* Sketch drawing animation */
+.doodle-draw {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: doodle-draw 2s ease-out forwards;
+}
+
+@keyframes doodle-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Typewriter effect */
+.doodle-typewriter {
+  overflow: hidden;
+  border-right: 3px solid var(--doodle-ink);
+  white-space: nowrap;
+  animation: 
+    doodle-typing 3s steps(40, end),
+    doodle-blink-caret 0.75s step-end infinite;
+}
+
+@keyframes doodle-typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes doodle-blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: var(--doodle-ink); }
+}
+
+/* Pulse animation for countdown */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+/* Hover grow effect */
+.doodle-grow {
+  transition: transform 0.3s ease;
+}
+
+.doodle-grow:hover {
+  transform: scale(1.05) rotate(0deg);
+}
+
+/* Scribble underline animation */
+.doodle-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.doodle-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 0;
+  height: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--doodle-accent) 0px,
+    var(--doodle-accent) 8px,
+    transparent 8px,
+    transparent 12px
+  );
+  transition: width 0.5s ease;
+}
+
+.doodle-underline:hover::after {
+  width: 100%;
+}
+
+/* Notebook paper effect */
+.doodle-notebook {
+  background: 
+    linear-gradient(to right, var(--doodle-accent) 0px, var(--doodle-accent) 1px, transparent 1px, transparent 40px),
+    repeating-linear-gradient(
+      transparent,
+      transparent 24px,
+      var(--doodle-sketch) 24px,
+      var(--doodle-sketch) 25px
+    );
+  background-color: var(--doodle-paper);
+  padding-left: 50px;
+}
+
+/* Torn paper edge */
+.doodle-torn {
+  position: relative;
+}
+
+.doodle-torn::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  height: 10px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0px,
+    transparent 3px,
+    var(--doodle-paper) 3px,
+    var(--doodle-paper) 6px
+  );
+}
+
+/* Doodle checkbox */
+.doodle-checkbox {
+  appearance: none;
+  width: 25px;
+  height: 25px;
+  border: 3px solid var(--doodle-ink);
+  border-radius: 4px;
+  background: var(--doodle-paper);
+  position: relative;
+  cursor: pointer;
+  transform: rotate(-2deg);
+  transition: all 0.3s ease;
+}
+
+.doodle-checkbox:checked {
+  background: var(--doodle-green);
+  transform: rotate(2deg) scale(1.1);
+}
+
+.doodle-checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+/* Sticky note effect */
+.doodle-sticky {
+  background: #fff9c4;
+  border: 2px solid var(--doodle-yellow);
+  border-radius: 0;
+  position: relative;
+  box-shadow: 3px 3px 8px rgba(0,0,0,0.2);
+}
+
+.doodle-sticky::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  right: 20px;
+  width: 30px;
+  height: 15px;
+  background: var(--doodle-yellow);
+  border-radius: 2px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Speech bubble */
+.doodle-speech {
+  position: relative;
+  background: var(--doodle-paper);
+  border: 3px solid var(--doodle-ink);
+  border-radius: 20px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.doodle-speech::after {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 30px;
+  width: 0;
+  height: 0;
+  border: 15px solid transparent;
+  border-top-color: var(--doodle-ink);
+}
+
+.doodle-speech::before {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 33px;
+  width: 0;
+  height: 0;
+  border: 12px solid transparent;
+  border-top-color: var(--doodle-paper);
+}
+
+/* Loading dots */
+.doodle-loading-dots {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.doodle-loading-dots span {
+  width: 8px;
+  height: 8px;
+  background: var(--doodle-ink);
+  border-radius: 50%;
+  animation: doodle-loading-bounce 1.4s ease-in-out both infinite;
+}
+
+.doodle-loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+.doodle-loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes doodle-loading-bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Doodle badge */
+.doodle-badge {
+  display: inline-block;
+  border: 2px solid var(--doodle-ink);
+  border-radius: 15px;
+  padding: 5px 12px;
+   
+  font-size: 0.8rem;
+  font-weight: bold;
+  transform: rotate(-3deg);
+  position: relative;
+  background-color: transparent !important;
+}
+
+.doodle-badge::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  background: var(--doodle-yellow);
+  border: 1px solid var(--doodle-ink);
+  border-radius: 50%;
+}
+
+/* Scribble border */
+.doodle-scribble {
+  border: none;
+  position: relative;
+  padding: 20px;
+}
+
+.doodle-scribble::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 3px solid var(--doodle-ink);
+  border-radius: 15px;
+  transform: rotate(1deg);
+}
+
+.doodle-scribble::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  border: 2px dashed var(--doodle-sketch);
+  border-radius: 12px;
+  transform: rotate(-1deg);
+}
+
+/* Question mark animation */
+.doodle-question {
+  animation: doodle-question-bob 2s ease-in-out infinite;
+}
+
+@keyframes doodle-question-bob {
+  0%, 100% {
+    transform: translateY(0) rotate(-5deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(5deg);
+  }
+}
+
+/* Responsive doodle adjustments */
+@media (max-width: 768px) {
+  .doodle-title {
+    font-size: 2rem;
+  }
+  
+  .doodle-card {
+    padding: 20px;
+    margin: 15px 0;
+  }
+  
+  .doodle-btn {
+    padding: 12px 20px;
+    font-size: 0.9rem;
+  }
+  
+  .doodle-avatar {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .doodle-timer {
+    width: 80px;
+    height: 80px;
+    font-size: 1rem;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --doodle-primary: #000000;
+    --doodle-secondary: #333333;
+    --doodle-paper: #ffffff;
+    --doodle-ink: #000000;
+  }
+  
+  .doodle-card,
+  .doodle-paper,
+  .doodle-btn {
+    border-width: 4px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .doodle-wiggle,
+  .doodle-bounce,
+  .doodle-float,
+  .doodle-tick {
+    animation: none;
+  }
+}

@@ -103,47 +103,81 @@ When `"status": "complete"`, the `output` field contains the generated context.
 
 ## 3. CLI Setup
 
-The CLI is a zero-dependency Node.js tool. Install it globally from the repo:
+The CLI is a Rust binary distributed via npm. It requires the backend to be running for authenticated usage.
 
-```bash
-cd docforge-cli
-npm install -g .
-```
-
-Once the CLI is on npm, you'll be able to install it with:
+### Install (once published to npm)
 
 ```bash
 npm install -g docforge-cli
 ```
 
-### Usage
+### Build from source (local development)
 
 ```bash
-# Generate context for a single package
-docforge generate react-bits@2.1.4
+cd docforge-cli
+cargo build --release
+# Binary lands at target/release/dcf
 
-# PyPI package
-docforge generate fastapi==0.110.0 --type pypi
-
-# From a URL (GitHub URLs are auto-detected)
-docforge generate https://github.com/DavidHDev/react-bits
-
-# Read package.json and generate context for all dependencies
-docforge detect
-
-# Append multiple packages into one file
-docforge detect --append --output .context.md
-
-# Output as JSON instead of markdown
-docforge generate react@18.2.0 --format json --output react.json
-
-# Point at a remote backend
-docforge generate react-bits@2.1.4 --backend https://api.docforge.dev
-# or via env var:
-DOCFORGE_BACKEND=https://api.docforge.dev docforge generate react-bits@2.1.4
+# Symlink so 'dcf' works from anywhere
+ln -sf $(pwd)/target/release/dcf ~/.local/bin/dcf
 ```
 
-Run `docforge --help` for the full reference.
+Then open a new terminal or run `hash -r` to clear bash's command cache.
+
+### Login
+
+The CLI uses device-flow auth tied to your DocForge account. Make sure the backend and frontend are both running first.
+
+```bash
+dcf login
+# Opens http://localhost:3000/auth/device in your browser
+# Enter the code shown in the terminal
+# Once confirmed, session token is saved to ~/.config/docforge/config.toml
+```
+
+### Usage — interactive mode (recommended)
+
+```bash
+dcf
+```
+
+Starts a persistent REPL session. Just type what you need:
+
+```
+→ react@18                        # npm package
+→ @tanstack/react-query@5         # scoped npm package
+→ fastapi==0.115                  # PyPI package
+→ github.com/vercel/next.js       # GitHub repo
+→ https://docs.stripe.com         # any docs URL
+→ @package.json                   # scan ALL deps in current project
+→ @path/to/package.json           # scan deps from any path
+→ help                            # show all options
+→ exit                            # quit
+```
+
+The `.context.md` file is written to whichever directory you ran `dcf` from.
+
+### Usage — one-shot commands
+
+```bash
+dcf generate react@18
+dcf generate fastapi==0.115
+dcf generate github.com/vercel/next.js
+dcf detect                        # reads package.json in current directory
+dcf config                        # show current config and session status
+dcf login                         # sign in via browser
+dcf logout                        # sign out
+```
+
+### Config file
+
+Stored at `~/.config/docforge/config.toml`. Contains session token and optional local API key fallbacks.
+
+```bash
+# Optional: set local API keys (no account needed, bypasses backend)
+dcf config --gemini-key YOUR_KEY
+dcf config --groq-key YOUR_KEY
+```
 
 ---
 
@@ -223,14 +257,29 @@ cd docforge-mcp && pip install -r requirements.txt
 
 ### Configure your AI tool
 
-**Claude Desktop** — edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+**Claude Desktop**
+
+_Linux:_
+```bash
+mkdir -p ~/.config/Claude
+nano ~/.config/Claude/claude_desktop_config.json
+```
+
+_macOS:_
+```bash
+nano ~/Library/Application\ Support/Claude/claude_desktop_config.json
+```
+
+_Windows:_ open `%APPDATA%\Claude\claude_desktop_config.json` in Notepad.
+
+Paste this (replace the path with your actual clone location):
 
 ```json
 {
   "mcpServers": {
     "docforge": {
       "command": "python",
-      "args": ["/absolute/path/to/docforge/docforge-mcp/server.py"],
+      "args": ["/home/YOUR_USERNAME/path/to/docforge/docforge-mcp/server.py"],
       "env": {
         "DOCFORGE_BACKEND_URL": "http://localhost:8000"
       }
@@ -238,6 +287,8 @@ cd docforge-mcp && pip install -r requirements.txt
   }
 }
 ```
+
+> **Tip (Linux/macOS):** run `pwd` inside the `docforge-mcp/` folder to get the exact path to paste.
 
 **Cursor** — create `.cursor/mcp.json` in your project root:
 
@@ -255,7 +306,15 @@ cd docforge-mcp && pip install -r requirements.txt
 }
 ```
 
-**Windsurf** — edit `~/.codeium/windsurf/mcp_config.json` with the same format.
+**Windsurf**
+
+| OS | Config file path |
+|---|---|
+| Linux | `~/.codeium/windsurf/mcp_config.json` |
+| macOS | `~/.codeium/windsurf/mcp_config.json` |
+| Windows | `%APPDATA%\Codeium\windsurf\mcp_config.json` |
+
+Use the same JSON format as above.
 
 Restart your AI tool after saving the config.
 

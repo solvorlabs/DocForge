@@ -1,0 +1,337 @@
+/* UserStats.css - Doodle Art Style */
+.user-stats {
+  position: relative;
+  margin: 32px 29px 0 36px;
+}
+
+/* Header Stats */
+.header-stats {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
+}
+
+.competers-icon {
+  background: var(--doodle-green);
+}
+
+.games-icon {
+  background: var(--doodle-blue);
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--doodle-secondary);
+
+}
+
+.stat-value {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: var(--doodle-ink);
+
+}
+
+/* User Profile Section */
+.user-profile-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.notification-icon {
+  display: flex;
+  align-items: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.user-details {
+  text-align: right;
+  font-size: 0.8rem;
+}
+
+.user-level {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.level-badge {
+  font-size: 0.7rem;
+  background: var(--doodle-accent);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: bold;
+
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.xp-text {
+  color: var(--doodle-ink);
+
+}
+
+.currency-text {
+  color: var(--doodle-green);
+  font-weight: bold;
+
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--doodle-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: bold;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 2px solid white;
+  transition: all 0.3s ease;
+}
+
+.user-avatar:hover {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.15);
+}
+
+.user-name-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.username {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: var(--doodle-ink);
+
+}
+
+.user-rating {
+  font-size: 0.8rem;
+  color: var(--doodle-secondary);
+
+}
+
+/* Ratings Panel */
+.ratings-panel {
+  margin-bottom: 30px;
+}
+
+.ratings-title {
+  margin: 0 0 15px 0;
+  font-size: 0.9rem;
+  font-weight: bold;
+  /* text-align: center; */
+  color: var(--doodle-secondary);
+
+  display: flex;
+  align-items: center;
+  /* justify-content: center; */
+}
+
+.ratings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rating-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-radius: 10px;
+  border: 2px solid var(--doodle-ink);
+  background: transparent;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.rating-item.featured {
+  padding: 15px;
+  border: 3px solid var(--doodle-accent);
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.rating-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.1);
+}
+
+.featured-badge {
+  position: absolute;
+  top: -8px;
+  right: 10px;
+  background: var(--doodle-accent);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 0.6rem;
+  font-weight: bold;
+
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
+}
+
+.rating-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rating-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rating-label {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: var(--doodle-ink);
+
+}
+
+.rating-value {
+  font-size: 0.9rem;
+  font-weight: bold;
+
+}
+
+.rating-value.featured-value {
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+/* Doodle Decorations */
+.doodle-decoration {
+  position: absolute;
+  font-size: 1.2rem;
+  opacity: 0.2;
+  animation: float 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.doodle-decoration-1 {
+  top: 10px;
+  right: 20px;
+  animation-delay: 0s;
+}
+
+.doodle-decoration-2 {
+  top: 50px;
+  left: 10px;
+  animation-delay: 1s;
+}
+
+.doodle-decoration-3 {
+  bottom: 20px;
+  right: 10px;
+  animation-delay: 2s;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-5px) rotate(5deg);
+  }
+}
+.header-main{
+  background-color: #fffbe7;
+    background-image:
+      linear-gradient(0deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+      url("data:image/svg+xml;utf8,<svg width='40' height='40' xmlns='http://www.w3.org/2000/svg'><path d='M0,40 Q20,35 40,40' stroke='%23e0c97f' stroke-width='1' fill='none'/><path d='M0,0 Q20,5 40,0' stroke='%23e0c97f' stroke-width='1' fill='none'/></svg>");
+    background-size: 40px 40px, 40px 40px, 80px 80px;
+    background-position: 0 0, 0 0, 0 0;
+    border-radius: 18px;
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.04);
+    border: 2px dashed #ffe082;
+    overflow: hidden;
+}
+/* Mobile Responsive */
+@media (max-width: 768px) {
+
+  /* .header-stats {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  } */
+  .header-stats {}
+
+  /* Doodle grid background for the whole user-stats area */
+  .user-stats {
+    
+    margin:0;
+  }
+
+  .stat-item {
+    padding-left: 0;
+  }
+
+  .user-profile-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .user-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .user-details {
+    text-align: left;
+  }
+
+  .rating-item {
+    padding: 8px;
+  }
+
+  .rating-item.featured {
+    padding: 12px;
+  }
+
+  .doodle-decoration {
+    font-size: 1rem;
+  }
+}

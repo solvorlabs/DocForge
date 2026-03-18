@@ -1,0 +1,393 @@
+/* LeaderboardCarousel.css - Doodle Art Style */
+.leaderboard-carousel {
+  margin-bottom: 30px;
+  width: 100%;
+}
+
+.leaderboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.leaderboard-title {
+  margin: 0;
+  font-size: 1.2rem;
+   
+  display: flex;
+  align-items: center;
+  color: var(--doodle-ink);
+}
+
+.scroll-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.scroll-button {
+  background: var(--doodle-paper);
+  border: 2px solid var(--doodle-ink);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+   
+}
+
+.scroll-button:hover:not(:disabled) {
+  background: var(--doodle-accent);
+  color: white;
+  transform: scale(1.1);
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+}
+
+.scroll-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.leaderboard-scroll-container {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Player Card */
+.player-card {
+  text-align: center;
+  padding: 10px;
+  border-radius: 15px;
+  background: var(--doodle-paper);
+  border: 2px solid var(--doodle-ink);
+  position: relative;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  min-width: 80px;
+  max-width: 120px;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+   
+  overflow: hidden;
+}
+
+.player-card:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 5px 5px 0 rgba(0,0,0,0.15);
+}
+
+/* Current User Card */
+.current-user {
+  background: var(--doodle-accent);
+  color: white;
+  border: 3px solid var(--doodle-ink);
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.2);
+}
+
+.current-user:hover {
+  transform: translateY(-3px) scale(1.02) rotate(1deg);
+  box-shadow: 6px 6px 0 rgba(0,0,0,0.25);
+}
+
+/* Doodle Decorations */
+.doodle-decoration {
+  position: absolute;
+  font-size: 1rem;
+  opacity: 0.3;
+  animation: float 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.doodle-decoration-1 {
+  top: 5px;
+  right: 5px;
+  animation-delay: 0s;
+}
+
+.doodle-decoration-2 {
+  bottom: 5px;
+  left: 5px;
+  animation-delay: 1.5s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-3px) rotate(5deg); }
+}
+
+/* Player Avatar */
+.player-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--doodle-paper);
+  border: 2px solid var(--doodle-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 8px;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.current-user-avatar {
+  background: white;
+  color: var(--doodle-accent);
+  border: 3px solid white;
+  font-weight: bold;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+}
+
+.player-avatar::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, var(--doodle-accent), var(--doodle-green));
+  border-radius: 50%;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.player-card:hover .player-avatar::before {
+  opacity: 0.3;
+}
+
+/* Player Info */
+.player-info {
+  margin-bottom: 5px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.player-name {
+  font-size: 0.7rem;
+  font-weight: bold;
+   
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  padding: 0 2px;
+}
+
+.current-user-name {
+  color: white;
+}
+
+.player-rating {
+  font-size: 0.8rem;
+  color: var(--doodle-secondary);
+   
+}
+
+.current-user-rating {
+  color: white;
+  font-weight: bold;
+}
+
+/* Rank Badge */
+.rank-badge {
+  position: absolute;
+  top: -3px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--doodle-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.6rem;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+  border: 2px solid white;
+}
+
+.current-user-badge {
+  background: var(--doodle-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* See More Card */
+.see-more-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  gap: 5px;
+  padding: 10px;
+  cursor: pointer;
+  border: 2px dashed var(--doodle-ink);
+  border-radius: 15px;
+  background: var(--doodle-paper);
+  transition: all 0.3s ease;
+  position: relative;
+   
+}
+
+.see-more-card:hover {
+  background: var(--doodle-accent-light);
+  border-color: var(--doodle-accent);
+  transform: scale(1.05);
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+}
+
+.see-more-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--doodle-paper);
+  border: 2px dashed var(--doodle-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--doodle-accent);
+  transition: all 0.3s ease;
+}
+
+.see-more-card:hover .see-more-icon {
+  background: var(--doodle-accent);
+  color: white;
+  border-color: var(--doodle-accent);
+}
+
+.see-more-text {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: var(--doodle-ink);
+   
+}
+
+.see-more-card:hover .see-more-text {
+  color: var(--doodle-accent);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .leaderboard-title {
+    font-size: 1rem;
+  }
+  
+  .player-card {
+    min-width: 70px;
+    max-width: 100px;
+    padding: 8px 6px;
+  }
+  
+  .player-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+  
+  .player-name {
+    font-size: 0.6rem;
+  }
+  
+  .player-rating {
+    font-size: 0.65rem;
+  }
+  
+  .doodle-decoration {
+    font-size: 0.8rem;
+  }
+  
+  .rank-badge {
+    width: 20px;
+    height: 20px;
+    top: -2px;
+    right: -6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .player-card {
+    min-width: 65px;
+    max-width: 85px;
+    padding: 6px 4px;
+  }
+  
+  .player-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+  }
+  
+  .player-name {
+    font-size: 0.55rem;
+  }
+  
+  .player-rating {
+    font-size: 0.6rem;
+  }
+  
+  .leaderboard-scroll-container {
+    gap: 10px;
+  }
+  
+  .rank-badge {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .see-more-card {
+    min-width: 65px;
+    padding: 8px 4px;
+  }
+  
+  .see-more-icon {
+    width: 26px;
+    height: 26px;
+  }
+  
+  .see-more-text {
+    font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .player-card {
+    min-width: 60px;
+    max-width: 75px;
+    padding: 5px 3px;
+  }
+  
+  .player-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+  
+  .player-name {
+    font-size: 0.5rem;
+  }
+  
+  .player-rating {
+    font-size: 0.55rem;
+  }
+  
+  .leaderboard-scroll-container {
+    gap: 8px;
+  }
+}

@@ -1,0 +1,33 @@
+/* HackathonPage.css */
+
+.logo-icon {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.game-card-hover {
+  transition: all 0.3s ease;
+}
+
+.game-card-hover:hover {
+  transform: translateY(-5px) scale(1.02);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .doodle-title {
+    font-size: 1.8rem !important;
+  }
+  
+  .doodle-subtitle {
+    font-size: 1rem !important;
+  }
+}

@@ -1,9 +1,14 @@
+# Rust
+docforge-cli/target
+Cargo.lock
+
 # Python
 __pycache__/
 *.pyc
 *.pyo
 .venv/
 venv/
+.claude/
 env/
 *.egg-info/
 dist/
@@ -13,6 +18,7 @@ build/
 # Environment
 .env
 .env.local
+.vscode/
 
 # Node.js / VS Code Extension
 node_modules/
@@ -29,3 +35,4 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+~/

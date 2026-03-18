@@ -2,8 +2,9 @@
         install-playwright test-backend test-extension clean help
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-PYTHON := python3
-PIP    := pip3
+VENV   := .venv
+PYTHON := $(VENV)/bin/python3
+PIP    := $(VENV)/bin/pip
 NODE   := node
 NPM    := npm
 
@@ -14,7 +15,7 @@ help: ## Show this help
 
 # ── Backend ───────────────────────────────────────────────────────────────────
 install-backend: ## Install Python backend dependencies
-	cd backend && $(PIP) install -r requirements.txt
+	$(PIP) install -r backend/requirements.txt
 
 install-playwright: ## Install Playwright browser binaries (run after install-backend)
 	playwright install chromium
@@ -66,10 +67,10 @@ build-web: ## Build the web frontend for production
 
 # ── MCP Server ────────────────────────────────────────────────────────────────
 install-mcp: ## Install MCP server dependencies
-	cd docforge-mcp && $(PIP) install -r requirements.txt
+	$(PIP) install -r docforge-mcp/requirements.txt
 
 dev-mcp: ## Run the MCP server (connects via stdio — use MCP inspector for testing)
-	cd docforge-mcp && $(PYTHON) server.py
+	$(PYTHON) docforge-mcp/server.py
 
 test-mcp: ## Test MCP server with the MCP inspector
 	@echo "Starting MCP inspector for DocForge server..."

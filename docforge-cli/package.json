@@ -3,10 +3,29 @@
   "version": "1.0.0",
   "description": "Generate prompt-ready context files for any library — pinned to your exact version.",
   "bin": {
-    "docforge": "./bin/docforge.js"
+    "dcf": "./bin/dcf.js"
   },
-  "keywords": ["ai", "documentation", "context", "llm", "cursor", "copilot"],
+  "keywords": ["ai", "documentation", "context", "llm", "cursor", "copilot", "claude", "gemini", "chatgpt"],
   "license": "MIT",
   "engines": { "node": ">=18" },
-  "dependencies": {}
+  "dependencies": {},
+  "optionalDependencies": {
+    "@docforge/cli-linux-x64":    "1.0.0",
+    "@docforge/cli-linux-arm64":  "1.0.0",
+    "@docforge/cli-darwin-x64":   "1.0.0",
+    "@docforge/cli-darwin-arm64": "1.0.0",
+    "@docforge/cli-win32-x64":    "1.0.0"
+  },
+  "files": ["bin/", "ascii-art.txt"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Shivoo29/docforge"
+  },
+  "homepage": "https://github.com/Shivoo29/docforge#readme",
+  "bugs": {
+    "url": "https://github.com/Shivoo29/docforge/issues"
+  }
 }
+
+
+

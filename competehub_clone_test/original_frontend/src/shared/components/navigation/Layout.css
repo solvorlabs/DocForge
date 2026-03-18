@@ -1,0 +1,44 @@
+/* components/layout/Layout.css */
+.layout-container {
+  position: relative;
+  min-height: 100vh;
+  background-color: #fdfdfd;
+  background-image: 
+    linear-gradient(#e5e5e5 1px, transparent 1px),
+    linear-gradient(90deg, #e5e5e5 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Content */
+.layout-content {
+  flex: 1;
+  width: 100%;
+  transition: margin-left 0.3s ease-in-out;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-bottom: 70px; /* Space for mobile navigation */
+  background: transparent; /* Let grid from parent show through */
+}
+
+/* Sidebar toggle button */
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sidebar-toggle:hover {
+  transform: scale(1.1);
+}
+
+/* Hide header on mobile */
+@media (max-width: 768px) {
+  .layout-content {
+    padding-top: 0;
+    min-height: 100vh;
+  }
+}

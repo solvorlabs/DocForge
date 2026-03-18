@@ -14,6 +14,13 @@ class InputType(str, Enum):
     url = "url"
     github = "github"
     paste = "paste"
+    crates = "crates"
+    rubygems = "rubygems"
+    pubdev = "pubdev"
+    nuget = "nuget"
+    maven = "maven"
+    hex = "hex"
+    cran = "cran"
 
 
 class OutputFormat(str, Enum):
@@ -35,6 +42,9 @@ class ContextRequest(BaseModel):
     components: list[str] | None = Field(None, description="Specific components to extract")
     output_format: OutputFormat = Field(OutputFormat.context_md, description="Output format")
     content: str | None = Field(None, description="Raw content for paste input type")
+    # Client-supplied API keys (used when no Bearer token is present)
+    gemini_key: str | None = Field(None, description="Gemini API key (CLI local-key mode)")
+    groq_key: str | None = Field(None, description="Groq API key (CLI local-key mode)")
 
 
 class JobCreatedResponse(BaseModel):

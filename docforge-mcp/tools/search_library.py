@@ -5,7 +5,7 @@ Check the DocForge cache before fetching fresh docs — if context is already
 cached, get_context will return it instantly without crawling.
 """
 
-from ..client import search_libraries
+from client import search_libraries
 
 
 async def handle(query: str) -> str:

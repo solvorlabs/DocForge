@@ -1,0 +1,94 @@
+/* components/navigation/MobileNavigation.css */
+.mobile-navigation {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  background: var(--doodle-paper, #ffffff);
+  border-top: 3px solid var(--doodle-ink, #333);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 8px 0;
+  z-index: 1000;
+  box-shadow: var(--doodle-shadow, 0 -4px 12px rgba(0, 0, 0, 0.1));
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  color: var(--doodle-secondary, #888);
+  min-width: 60px;
+  position: relative;
+   
+}
+
+.mobile-nav-item:hover:not(.coming-soon) {
+  background: var(--doodle-accent-light, rgba(74, 144, 226, 0.1));
+  color: var(--doodle-accent, #4A90E2);
+  transform: scale(1.05);
+}
+
+.mobile-nav-item.active {
+  color: var(--doodle-accent, #4A90E2);
+  background: var(--doodle-accent-light, rgba(74, 144, 226, 0.1));
+}
+
+.mobile-nav-item.active .mobile-nav-icon {
+  background: var(--doodle-accent-light, rgba(74, 144, 226, 0.15));
+}
+
+.mobile-nav-item.coming-soon {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mobile-nav-icon {
+  padding: 4px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+  position: relative;
+}
+
+.mobile-nav-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.coming-soon-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  background: var(--doodle-orange, #FF6B35);
+  border-radius: 50%;
+  border: 1px solid var(--doodle-paper, #ffffff);
+}
+
+/* Hide on desktop and tablet */
+@media (min-width: 769px) {
+  .mobile-navigation {
+    display: none;
+  }
+}
+
+/* Adjust for very small screens */
+@media (max-width: 360px) {
+  .mobile-nav-item {
+    min-width: 50px;
+    padding: 6px 8px;
+  }
+  
+  .mobile-nav-label {
+    font-size: 0.65rem;
+  }
+}
