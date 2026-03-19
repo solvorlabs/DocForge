@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Replace https://competehub.essolutions.dev with your actual production domain -->
+  <url>
+    <loc>https://competehub.essolutions.dev/</loc>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/landing</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/home</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/auth</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/login</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/register</loc>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Core game and arena pages -->
+  <url>
+    <loc>https://competehub.essolutions.dev/custom-rooms</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/leaderboard</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/daily-challenge</loc>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Ranked ladder -->
+  <url>
+    <loc>https://competehub.essolutions.dev/ranked</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/ranked/search</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/ranked/history</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/ranked/profile</loc>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Question bank & learning content -->
+  <url>
+    <loc>https://competehub.essolutions.dev/question-bank</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/question-bank/jee</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/question-bank/gate</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Community & blog -->
+  <url>
+    <loc>https://competehub.essolutions.dev/community</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/community/hackwithMait-winners-2024</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/community/welcome-community</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/community/ranking-strategies-guide</loc>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Marketing & legal pages -->
+  <url>
+    <loc>https://competehub.essolutions.dev/hackathon</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/privacy</loc>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/terms</loc>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/contact</loc>
+    <priority>0.4</priority>
+  </url>
+
+  <!-- Key game mode routes -->
+  <url>
+    <loc>https://competehub.essolutions.dev/game/quantum-chess</loc>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/game/escape-lab</loc>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/game/gene-splicer</loc>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/game/ai-training</loc>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/game/numerical-speed-race</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/game/equation-builder</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/game/boss-mode</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/games/dragon-out</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/games/crossword</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://competehub.essolutions.dev/games/runner</loc>
+    <priority>0.6</priority>
+  </url>
+</urlset>
