@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+     fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+  <!--
+    DocForge logo: document with pencil floating above a blacksmith's anvil.
+    This SVG is used as the monochrome activity-bar icon (VSCode CSS mask).
+  -->
+
+  <!-- Document (upper area, page with folded top-right corner) -->
+  <path stroke-width="1.1" d="M8.5,8.5 L8.5,1.5 L13,1.5 L15.5,4 L15.5,8.5 Z"/>
+  <!-- Fold crease -->
+  <path stroke-width="0.65" d="M13,1.5 L13,4 L15.5,4"/>
+  <!-- Text lines on page -->
+  <line x1="10" y1="5.5" x2="14" y2="5.5" stroke-width="0.6"/>
+  <line x1="10" y1="6.6" x2="14" y2="6.6" stroke-width="0.6"/>
+  <line x1="10" y1="7.6" x2="12.8" y2="7.6" stroke-width="0.6"/>
+  <!-- Pencil (diagonal, bottom-right of document) -->
+  <path stroke-width="0.7" d="M12.8,7.2 L14.3,5.7 L15.1,6.5 L13.6,8.0 Z"/>
+
+  <!-- Anvil silhouette:
+       horn (pointed left) → wide flat face → step on right →
+       waist narrows → base widens → two feet
+  -->
+  <path stroke-width="1.15" d="
+    M 1.5,11.2
+    L 6.0,9.5
+    L 17.5,9.5
+    L 19.8,9.5  L 19.8,11.5  L 17.5,11.5
+    L 15.5,11.5 L 15.5,14.5
+    L 17.0,14.5 L 17.0,17.5
+    L 14.5,17.5 L 14.5,20.5
+    L 12.0,20.5 L 12.0,17.5
+    L 9.5,17.5  L 9.5,14.5
+    L 6.5,14.5  L 6.5,11.5
+    L 4.5,11.5
+    Z"/>
+</svg>

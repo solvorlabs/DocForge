@@ -8,6 +8,7 @@
     "type": "git",
     "url": "https://github.com/docforge/docforge-vscode"
   },
+  "icon": "media/image.png",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -25,11 +26,36 @@
     "cursor"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onUri"
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "docforge-sidebar",
+          "title": "DocForge",
+          "icon": "media/docforge.svg"
+        }
+      ]
+    },
+    "views": {
+      "docforge-sidebar": [
+        {
+          "type": "webview",
+          "id": "docforge.sidebarView",
+          "name": "DocForge",
+          "icon": "media/image.png"
+        }
+      ]
+    },
     "commands": [
+      {
+        "command": "docforge.openPanel",
+        "title": "DF: Open Panel",
+        "icon": "media/image.png"
+      },
       {
         "command": "docforge.generateContext",
         "title": "DF: Generate Context File"
@@ -82,7 +108,12 @@
         "docforge.apiKey": {
           "type": "string",
           "default": "",
-          "description": "Your DocForge API key (required for enterprise features)."
+          "description": "Your DocForge API key. Can also be set directly in the sidebar panel."
+        },
+        "docforge.webUrl": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "DocForge web app URL. Used for the Login / Get API Key button in the sidebar. Change to https://docforge.dev for production."
         }
       }
     }

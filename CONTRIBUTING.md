@@ -17,13 +17,16 @@ Thanks for wanting to contribute. This document covers how to get your environme
 ```
 docforge/
 ├── backend/                     # FastAPI backend (Python)
-│   ├── main.py                  # App entry point, router registration
+│   ├── main.py                  # App entry point, router registration, CORS, middleware
 │   ├── routers/
+│   │   ├── auth.py              # POST /api/auth/login, /register
+│   │   ├── oauth.py             # GET /api/auth/oauth/google, /github + callbacks
 │   │   ├── context.py           # POST /api/context, GET /api/context/{id}
 │   │   ├── search.py            # GET /api/search
 │   │   ├── versions.py          # GET /api/versions/{library}
 │   │   └── corrections.py       # POST/GET /api/corrections
 │   ├── services/
+│   │   ├── auth_service.py      # JWT creation, password hashing, OAuth user upsert
 │   │   ├── ingestion/
 │   │   │   ├── npm_ingester.py  # npm registry → metadata + homepage
 │   │   │   ├── url_ingester.py  # Playwright stealth crawler
@@ -36,12 +39,13 @@ docforge/
 │
 ├── docforge-vscode/             # VS Code extension (TypeScript)
 │   └── src/
-│       ├── extension.ts         # Entry point, command registration
+│       ├── extension.ts         # Entry point, command registration, OAuth URI handler
 │       ├── commands/
 │       │   ├── generateContext.ts  # DF: Generate Context File
 │       │   └── updateContext.ts    # DF: Update Existing Context
-│       ├── api/docforgeClient.ts   # HTTP client + polling
+│       ├── api/docforgeClient.ts   # HTTP client + polling + auth helpers
 │       ├── ui/
+│       │   ├── webviewPanel.ts  # Sidebar panel: auth, generation, state management
 │       │   ├── inputFlow.ts     # 3-step QuickPick: source → value → format
 │       │   └── statusBar.ts     # Status bar item
 │       └── utils/
@@ -49,10 +53,18 @@ docforge/
 │           ├── packageDetector.ts  # Read package.json, filter URL deps
 │           └── cursorInjector.ts   # Auto-write to .cursor/rules/*.mdc
 │
-├── docforge-cli/                # CLI tool (Node.js, zero dependencies)
-│   └── bin/docforge.js          # Single-file CLI with ANSI colors
+├── docforge-cli/                # CLI tool (Rust)
+│   ├── src/main.rs              # Rust entry point
+│   ├── Cargo.toml               # Rust dependencies
+│   ├── package.json             # npm wrapper (main package)
+│   └── npm/                     # Per-platform binary packages
+│       ├── linux-x64/
+│       ├── linux-arm64/
+│       ├── darwin-x64/
+│       ├── darwin-arm64/
+│       └── win32-x64/
 │
-├── docforge-web/                # Web UI (Next.js 14 + Three.js)
+├── docforge-web/                # Web UI (Next.js 14 + Three.js + Radix UI)
 │   ├── app/
 │   │   ├── page.tsx             # Landing page with Beams background
 │   │   └── generate/page.tsx    # Generate page with live job polling
@@ -132,12 +144,26 @@ Validate against these test targets — all must produce correct output:
 | `fastapi` (no version) | Resolves to latest, PyPI metadata correct |
 | `https://github.com/DavidHDev/react-bits` | GitHub ingester: README + /docs extracted |
 
+**Auth** — test the auth endpoints:
+
+```bash
+# Register
+curl -X POST http://localhost:8000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"testpass123"}'
+
+# Login
+curl -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"testpass123"}'
+```
+
 **CLI** — test from a project directory with a `package.json`:
 
 ```bash
 cd /tmp/test-project
-docforge generate react@18.2.0
-docforge detect
+dcf generate react@18.2.0
+dcf detect
 ```
 
 **Extension** — TypeScript must compile clean:
@@ -186,6 +212,14 @@ Most modern doc sites are React or Next.js apps that render content client-side.
 
 Gemini's 1M token context window handles large documentation sites in one shot. The Flash variant is fast enough for interactive use (5–15s structuring). When Gemini returns 429 (daily quota exceeded), the pipeline immediately retries with Groq LLaMA 3.3 70B — no user action needed. Groq's free tier is 14,400 requests/day.
 
+### Why JWT auth instead of session cookies?
+
+JWTs work across all clients — the VS Code extension, the CLI, the web UI, and the MCP server — without any session store. The token is written to `~/.config/docforge/config.toml` after login and is read by both the CLI and the VS Code extension. This means you sign in once and all tools work.
+
+### Why a local HTTP server for VS Code OAuth?
+
+The VS Code extension spawns a temporary `http.createServer` on a random port to receive the OAuth token after the user completes sign-in in the browser. This is the most reliable method — it doesn't require the user to copy-paste a code, and it works even when the `vscode://` URI handler isn't available (e.g., remote SSH sessions).
+
 ### Why DEV_MODE in-memory cache?
 
 Supabase is operationally complex to set up locally. The in-memory fallback means `make dev-backend` is the only command needed to run the full stack. In production, Supabase is used for persistent caching across restarts and multiple backend instances.
@@ -198,9 +232,9 @@ When a project uses 30 dependencies, generating 30 separate `.context.md` files 
 
 VS Code extensions bundle their `node_modules` into the `.vsix`. Keeping the extension dependency-free (Node.js built-ins only) keeps the bundle small and eliminates version conflicts.
 
-### Why no external npm deps in the CLI?
+### Why Rust for the CLI?
 
-Same reason — and it means `npm install -g docforge-cli` has instant install time with no transitive dependencies to audit.
+The CLI is distributed as a native binary via npm's optional platform packages. Rust compiles to a single statically-linked binary per platform — no runtime needed, instant startup, no `node_modules` at install time.
 
 ---
 
@@ -220,12 +254,13 @@ Same reason — and it means `npm install -g docforge-cli` has instant install t
 - `async`/`await` only — no callbacks or `.then()` chains
 - Use the VS Code [disposable pattern](https://code.visualstudio.com/api/references/vscode-api#Disposable) for all subscriptions
 - Keep commands thin — business logic goes in `api/` and `utils/`, not in `commands/`
+- Template literals in webview HTML: double-escape backslashes in regex patterns (`<\\/span>` → `<\/span>` in output). Single escape is consumed by the template literal engine and causes JS syntax errors in the webview.
 
-### CLI (Node.js)
+### Rust (CLI)
 
-- Zero external dependencies — Node.js built-ins only (`fs`, `path`, `https`, `http`)
-- ANSI colors via raw escape codes (no chalk)
-- All output to `process.stdout` / `process.stderr`, never `console.log` in library code
+- Use `tokio` for async I/O
+- Error handling with `anyhow` — no `.unwrap()` in production paths
+- All output to `stdout` / `stderr` — no hidden side effects
 
 ---
 
@@ -233,19 +268,19 @@ Same reason — and it means `npm install -g docforge-cli` has instant install t
 
 Good areas to contribute:
 
-- **New ingester** — e.g. a dedicated JSR (JavaScript Registry) ingester
+- **New ingester** — e.g. a dedicated JSR (JavaScript Registry) ingester for Deno packages
 - **Better HTML → Markdown conversion** — improving the html2text pipeline
 - **Gotcha extraction improvements** — prompt engineering for specific library types
 - **Backend tests** — pytest unit tests for ingesters and the formatter
-- **CI/CD** — GitHub Actions for linting and running the test targets
+- **CI/CD** — GitHub Actions for linting and running the test targets (see DEPLOY.md)
 - **Community corrections UI** — frontend page for submitting doc corrections
-- **User accounts** — Supabase Auth integration for the web UI
 
 ### Out of scope (for now)
 
 - Changing the `.context.md` output format in a breaking way
-- Adding new runtime dependencies to the VS Code extension or CLI
+- Adding new runtime dependencies to the VS Code extension (Node.js built-ins only)
 - Switching away from Gemini/Groq without a discussion in an issue first
+- Adding external npm packages to the CLI
 
 ---
 
@@ -257,6 +292,7 @@ Include:
 2. The full error message from the backend logs (`make dev-backend` terminal output)
 3. Which step failed: resolving metadata, crawling, AI structuring, or formatting
 4. The `DEV_MODE` value and whether `GEMINI_API_KEY` / `GROQ_API_KEY` are set
+5. For extension bugs: the VS Code Output panel → "DocForge" channel content
 
 ---
 

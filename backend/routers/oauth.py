@@ -41,21 +41,23 @@ def _error_redirect(msg: str) -> RedirectResponse:
 # ── Google ────────────────────────────────────────────────────────────────────
 
 @router.get("/google")
-async def google_login():
+async def google_login(source: str = "web", callback_port: str = ""):
     if not GOOGLE_CLIENT_ID:
         return _error_redirect("Google OAuth not configured")
+    state = f"vscode_local:{callback_port}" if source == "vscode_local" and callback_port else source
     params = urlencode({
         "client_id": GOOGLE_CLIENT_ID,
         "redirect_uri": GOOGLE_REDIRECT_URI,
         "response_type": "code",
         "scope": "openid email profile",
         "access_type": "offline",
+        "state": state,
     })
     return RedirectResponse(f"https://accounts.google.com/o/oauth2/v2/auth?{params}")
 
 
 @router.get("/google/callback")
-async def google_callback(code: str = "", error: str = ""):
+async def google_callback(code: str = "", error: str = "", state: str = "web"):
     if error or not code:
         return _error_redirect("Google sign-in cancelled")
 
@@ -91,6 +93,13 @@ async def google_callback(code: str = "", error: str = ""):
 
     user  = await auth_service.get_or_create_oauth_user(email)
     token = auth_service.create_access_token(user["id"], user["email"])
+    if state.startswith("vscode_local:"):
+        port = state.split(":", 1)[1]
+        return RedirectResponse(f"http://localhost:{port}/?token={token}&email={email}")
+    if state == "vscode":
+        return RedirectResponse(
+            f"vscode://docforge.docforge/callback?token={token}&email={email}"
+        )
     return RedirectResponse(
         f"{FRONTEND_URL}/auth/callback?token={token}&email={email}"
     )
@@ -99,19 +108,21 @@ async def google_callback(code: str = "", error: str = ""):
 # ── GitHub ────────────────────────────────────────────────────────────────────
 
 @router.get("/github")
-async def github_login():
+async def github_login(source: str = "web", callback_port: str = ""):
     if not GITHUB_CLIENT_ID:
         return _error_redirect("GitHub OAuth not configured")
+    state = f"vscode_local:{callback_port}" if source == "vscode_local" and callback_port else source
     params = urlencode({
         "client_id": GITHUB_CLIENT_ID,
         "redirect_uri": GITHUB_REDIRECT_URI,
         "scope": "user:email",
+        "state": state,
     })
     return RedirectResponse(f"https://github.com/login/oauth/authorize?{params}")
 
 
 @router.get("/github/callback")
-async def github_callback(code: str = "", error: str = ""):
+async def github_callback(code: str = "", error: str = "", state: str = "web"):
     if error or not code:
         return _error_redirect("GitHub sign-in cancelled")
 
@@ -162,6 +173,13 @@ async def github_callback(code: str = "", error: str = ""):
 
     user  = await auth_service.get_or_create_oauth_user(email)
     token = auth_service.create_access_token(user["id"], user["email"])
+    if state.startswith("vscode_local:"):
+        port = state.split(":", 1)[1]
+        return RedirectResponse(f"http://localhost:{port}/?token={token}&email={email}")
+    if state == "vscode":
+        return RedirectResponse(
+            f"vscode://docforge.docforge/callback?token={token}&email={email}"
+        )
     return RedirectResponse(
         f"{FRONTEND_URL}/auth/callback?token={token}&email={email}"
     )

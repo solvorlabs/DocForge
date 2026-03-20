@@ -1,6 +1,8 @@
-# DocForge — Setup Guide
+# DocForge — Local Development Setup
 
-This guide covers every way to run DocForge: backend, VS Code extension, CLI, web UI, and MCP server.
+This guide covers running every component of DocForge locally: backend, VS Code extension, CLI, web UI, and MCP server.
+
+For production deployment, see [DEPLOY.md](DEPLOY.md).
 
 ---
 
@@ -11,6 +13,7 @@ This guide covers every way to run DocForge: backend, VS Code extension, CLI, we
 | Python | 3.12 | `python3 --version` |
 | Node.js | 20 | `node --version` |
 | npm | 10 | `npm --version` |
+| Rust + Cargo | stable | `cargo --version` |
 | Git | any | `git --version` |
 
 You will also need a **Google Gemini API key** for the primary structuring engine. Get one free at [aistudio.google.com](https://aistudio.google.com).
@@ -37,7 +40,9 @@ The backend is required by all other components. The extension, CLI, MCP server,
 ```bash
 make install-backend
 # or manually:
-cd backend && pip install -r requirements.txt
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r backend/requirements.txt
 ```
 
 ### Install Playwright browser (needed for JS-rendered doc sites)
@@ -70,9 +75,24 @@ SUPABASE_KEY=your_supabase_anon_key
 
 # Keep true for local dev (no Supabase needed, uses in-memory cache)
 DEV_MODE=true
+
+# JWT signing key — required for auth (generate with: python3 -c "import secrets; print(secrets.token_hex(32))")
+SECRET_KEY=your_secret_key_here
+
+# OAuth — Google (optional for local dev)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# OAuth — GitHub (optional for local dev)
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+
+# Used in OAuth redirect URIs
+BACKEND_URL=http://localhost:8000
+FRONTEND_URL=http://localhost:3000
 ```
 
-> **Note:** `DEV_MODE=true` uses an in-memory cache so you can run the full stack without any database. Cache is lost on restart.
+> **Note:** `DEV_MODE=true` uses an in-memory cache so you can run the full stack without any database. Cache is lost on restart. Auth still works — users are stored in memory too.
 
 ### Start the backend
 
@@ -103,15 +123,9 @@ When `"status": "complete"`, the `output` field contains the generated context.
 
 ## 3. CLI Setup
 
-The CLI is a Rust binary distributed via npm. It requires the backend to be running for authenticated usage.
+The CLI is a Rust binary distributed via npm. It requires the backend to be running for generating context.
 
-### Install (once published to npm)
-
-```bash
-npm install -g docforge-cli
-```
-
-### Build from source (local development)
+### Build from source
 
 ```bash
 cd docforge-cli
@@ -122,17 +136,14 @@ cargo build --release
 ln -sf $(pwd)/target/release/dcf ~/.local/bin/dcf
 ```
 
-Then open a new terminal or run `hash -r` to clear bash's command cache.
+Then open a new terminal or run `hash -r` to clear the shell's command cache.
 
 ### Login
 
-The CLI uses device-flow auth tied to your DocForge account. Make sure the backend and frontend are both running first.
-
 ```bash
 dcf login
-# Opens http://localhost:3000/auth/device in your browser
-# Enter the code shown in the terminal
-# Once confirmed, session token is saved to ~/.config/docforge/config.toml
+# Opens your browser to the web UI login page
+# After sign-in, the JWT token is saved to ~/.config/docforge/config.toml
 ```
 
 ### Usage — interactive mode (recommended)
@@ -171,7 +182,7 @@ dcf logout                        # sign out
 
 ### Config file
 
-Stored at `~/.config/docforge/config.toml`. Contains session token and optional local API key fallbacks.
+Stored at `~/.config/docforge/config.toml`. Written after successful `dcf login` and shared with the VS Code extension.
 
 ```bash
 # Optional: set local API keys (no account needed, bypasses backend)
@@ -183,7 +194,7 @@ dcf config --groq-key YOUR_KEY
 
 ## 4. VS Code Extension Setup
 
-### Install from .vsix (recommended)
+### Install from .vsix (recommended for testing)
 
 ```bash
 make package-extension
@@ -204,7 +215,8 @@ make dev-extension       # TypeScript watch mode (recompiles on save)
 2. Press **F5** — opens an Extension Development Host window
 3. In that window, open any project folder
 4. Set the backend URL: `Ctrl+,` → search `docforge.backendUrl` → set to `http://localhost:8000`
-5. Press `Ctrl+Shift+P` → type **DF:** to see all commands
+5. Click the DocForge shield icon in the Activity Bar to open the sidebar
+6. Sign in with Google, GitHub, or email/password
 
 ### Available Commands (Ctrl+Shift+P → type DF:)
 
@@ -223,7 +235,17 @@ make dev-extension       # TypeScript watch mode (recompiles on save)
 | `docforge.outputPath` | `.context.md` | Output file path (relative to workspace root) |
 | `docforge.autoOpenFile` | `true` | Auto-open the file after generation |
 | `docforge.autoInjectCursor` | `true` | Auto-write to `.cursor/rules/` if the project uses Cursor |
-| `docforge.apiKey` | `""` | API key for enterprise features |
+| `docforge.apiKey` | `""` | Legacy API key (JWT from login is preferred) |
+
+### Auth in the extension
+
+The sidebar panel lets you:
+- Sign in with Google or GitHub (opens the browser, returns the JWT via `vscode://` URI handler)
+- Sign in with email + password
+- Register a new account
+- Set your Gemini/Groq API keys directly in the panel
+
+After sign-in, the JWT is written to `~/.config/docforge/config.toml` (same file the CLI uses). You stay signed in across VS Code restarts.
 
 ---
 
@@ -288,7 +310,7 @@ Paste this (replace the path with your actual clone location):
 }
 ```
 
-> **Tip (Linux/macOS):** run `pwd` inside the `docforge-mcp/` folder to get the exact path to paste.
+> **Tip (Linux/macOS):** run `pwd` inside the `docforge-mcp/` folder to get the exact path.
 
 **Cursor** — create `.cursor/mcp.json` in your project root:
 
@@ -343,9 +365,16 @@ Runs `install-backend`, `install-extension`, `install-mcp`, and `install-web` in
 |----------|-----------|---------|-------------|
 | `GEMINI_API_KEY` | backend | — | Google Gemini API key (required) |
 | `GROQ_API_KEY` | backend | — | Groq API key (fallback when Gemini quota hit) |
+| `SECRET_KEY` | backend | — | JWT signing secret (required for auth) |
 | `SUPABASE_URL` | backend | — | Supabase project URL |
 | `SUPABASE_KEY` | backend | — | Supabase anon key |
-| `DEV_MODE` | backend | `true` | Use in-memory cache, skip external services |
+| `DEV_MODE` | backend | `true` | Use in-memory cache and storage, skip external services |
+| `BACKEND_URL` | backend | `http://localhost:8000` | Used in OAuth redirect URIs |
+| `FRONTEND_URL` | backend | `http://localhost:3000` | Used in OAuth redirect URIs |
+| `GOOGLE_CLIENT_ID` | backend | — | Google OAuth app client ID |
+| `GOOGLE_CLIENT_SECRET` | backend | — | Google OAuth app client secret |
+| `GITHUB_CLIENT_ID` | backend | — | GitHub OAuth app client ID |
+| `GITHUB_CLIENT_SECRET` | backend | — | GitHub OAuth app client secret |
 | `PLAYWRIGHT_TIMEOUT` | backend | `60000` | Browser timeout in ms |
 | `DOCFORGE_BACKEND_URL` | MCP server | `https://api.docforge.dev` | Backend URL for MCP |
 | `NEXT_PUBLIC_BACKEND_URL` | web UI | `http://localhost:8000` | Backend URL for web UI |
@@ -362,7 +391,7 @@ Runs `install-backend`, `install-extension`, `install-mcp`, and `install-web` in
 | `make dev-web` | Start Next.js dev server |
 | `make dev-mcp` | Start MCP server (stdio mode) |
 | `make install` | Install all dependencies |
-| `make install-backend` | Install Python dependencies |
+| `make install-backend` | Install Python dependencies into `.venv` |
 | `make install-extension` | Install VS Code extension npm deps |
 | `make install-web` | Install web UI npm deps |
 | `make install-mcp` | Install MCP Python dependencies |
@@ -381,23 +410,29 @@ Runs `install-backend`, `install-extension`, `install-mcp`, and `install-web` in
 **Backend unreachable from extension or CLI**
 Make sure `make dev-backend` is running. Set `docforge.backendUrl` to `http://localhost:8000` in VS Code settings, or pass `--backend http://localhost:8000` to the CLI.
 
+**OAuth sign-in opens browser but VS Code sidebar doesn't update**
+Make sure `BACKEND_URL=http://localhost:8000` and `FRONTEND_URL=http://localhost:3000` are set in `backend/.env`. The backend uses these to construct redirect URIs. The extension catches the token via the `vscode://docforge.docforge/callback` URI handler.
+
 **Gemini returns 429 / quota exceeded**
 The backend automatically falls back to Groq. Add `GROQ_API_KEY` to `backend/.env` to enable it. Groq's free tier allows 14,400 requests/day.
 
 **Gemini returns empty / garbled JSON**
-Your `GEMINI_API_KEY` may be missing. With `DEV_MODE=true` and no key, look for `"⚠️ Gemini API key not configured"` in the backend output.
+Your `GEMINI_API_KEY` may be missing. With `DEV_MODE=true` and no key, look for `"Gemini API key not configured"` in the backend output.
 
 **Playwright fails to launch**
 Run `playwright install chromium --with-deps`. On Linux the `--with-deps` flag installs required system libraries.
 
 **npm package gives 404**
-The specific version may not exist on npm. The backend automatically falls back to `latest`. If a scoped package like `@react-bits` has no slash in the name, it's treated as a plain package.
+The specific version may not exist on npm. The backend automatically falls back to `latest`.
 
 **GitHub URL clone fails**
-URLs like `https://github.com/org/repo/tree/master/subdir` are automatically stripped to the repo root (`https://github.com/org/repo`). The full repo is shallow-cloned; only the relevant files are read.
+URLs like `https://github.com/org/repo/tree/master/subdir` are automatically stripped to the repo root. The full repo is shallow-cloned; only the relevant files are read.
 
 **MCP tools not appearing in Claude Desktop**
 The `args` path must be absolute. Restart Claude Desktop after editing the config file.
 
 **Web UI compiles slowly**
 The web UI uses Turbopack (`next dev --turbo`). First compile is slow due to Three.js; subsequent hot reloads are near-instant.
+
+**Extension shows "Checking..." permanently**
+The sidebar health check has a 5-second timeout. If the backend is not running, it resolves to "Offline" automatically. If it stays stuck, check the VS Code Output panel (Ctrl+Shift+U) and select "DocForge" from the dropdown.

@@ -39,11 +39,11 @@ All clients (extension, CLI, MCP, web) are thin HTTP wrappers. All the heavy lif
 
 | Component | Stack | What it does |
 |-----------|-------|--------------|
-| `backend/` | FastAPI + Python | Crawl → structure → cache pipeline |
-| `docforge-vscode/` | TypeScript + VS Code API | Context generation from the editor |
-| `docforge-cli/` | Node.js (zero dependencies) | Terminal CLI, installable via npm |
+| `backend/` | FastAPI + Python | Crawl → structure → cache pipeline, JWT auth, OAuth |
+| `docforge-vscode/` | TypeScript + VS Code API | Sidebar panel with auth, context generation from the editor |
+| `docforge-cli/` | Rust binary + npm wrapper | Terminal CLI, installable via npm |
 | `docforge-mcp/` | Python + MCP SDK | Lets AI assistants fetch docs autonomously |
-| `docforge-web/` | Next.js 14 + Three.js | Web UI with live job progress |
+| `docforge-web/` | Next.js 14 + Three.js + Radix UI | Web UI with live job progress and auth |
 
 ---
 
@@ -54,18 +54,21 @@ All clients (extension, CLI, MCP, web) are thin HTTP wrappers. All the heavy lif
 ```bash
 npm install -g docforge-cli
 
-docforge generate react-bits@2.1.4
-docforge generate fastapi==0.110.0 --type pypi
-docforge generate https://github.com/DavidHDev/react-bits
-docforge detect                         # reads package.json, generates all deps
+dcf login                              # sign in via browser
+dcf generate react-bits@2.1.4
+dcf generate fastapi==0.110.0
+dcf generate https://github.com/DavidHDev/react-bits
+dcf detect                             # reads package.json, generates all deps
 ```
 
 ### VS Code Extension
 
 1. Install: search `DocForge` in the VS Code Marketplace
-2. `Ctrl+Shift+P` → type **DF:** to see all commands
-3. Pick **DF: Generate Context File** → choose source type → choose format
-4. `.context.md` appears in your workspace root after 30–90s
+2. Click the DocForge shield icon in the Activity Bar to open the sidebar
+3. Sign in with Google, GitHub, or email/password
+4. `Ctrl+Shift+P` → type **DF:** to see all commands
+5. Pick **DF: Generate Context File** → choose source type → choose format
+6. `.context.md` appears in your workspace root after 30–90s
 
 When using **DF: Detect from package.json**, select multiple packages — they all run in sequence and get appended into one `.context.md` file.
 
@@ -119,10 +122,10 @@ import AnimatedList from '@/components/AnimatedList'
 **Props:**
 | Prop  | Type     | Required | Default |
 |-------|----------|----------|---------|
-| items | string[] | ✓        | —       |
+| items | string[] | yes      | —       |
 | delay | number   | —        | 0.1     |
 
-**⚠️ Gotchas (Common AI Codegen Errors):**
+**Gotchas (Common AI Codegen Errors):**
 - Add 'use client' at the top of any Next.js App Router file using this component
 - framer-motion must be installed separately — it is not bundled
 - The import path is @/components/AnimatedList, not react-bits/AnimatedList
@@ -155,6 +158,18 @@ When using **multiple packages**, all results are appended into a single file wi
 
 ---
 
+## Authentication
+
+DocForge uses JWT-based auth across all clients. You can sign in with:
+
+- **Google OAuth** — one-click sign-in from the VS Code sidebar or web UI
+- **GitHub OAuth** — one-click sign-in from the VS Code sidebar or web UI
+- **Email + password** — standard account registration
+
+The VS Code extension stores the JWT in `~/.config/docforge/config.toml` (shared with the CLI). The CLI uses the same file via `dcf login`.
+
+---
+
 ## AI Fallback Chain
 
 | Engine | Role | Limit |
@@ -181,4 +196,6 @@ DocForge is the only tool that is simultaneously **version-pinned**, works on **
 
 ## Setup & Development
 
-See [setup.md](setup.md) for full installation instructions and [CONTRIBUTING.md](CONTRIBUTING.md) to contribute.
+See [setup.md](setup.md) for full local development instructions.
+See [DEPLOY.md](DEPLOY.md) for production deployment (Railway, Vercel, npm, VS Marketplace).
+See [CONTRIBUTING.md](CONTRIBUTING.md) to contribute.

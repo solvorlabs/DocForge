@@ -7,6 +7,9 @@
 
 import * as https from "https";
 import * as http from "http";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import * as vscode from "vscode";
 
 export interface ContextRequest {
@@ -49,9 +52,54 @@ function getBackendUrl(): string {
   return config.get<string>("backendUrl", "https://api.docforge.dev");
 }
 
-function getApiKey(): string {
-  const config = vscode.workspace.getConfiguration("docforge");
-  return config.get<string>("apiKey", "");
+function getCliToken(): string {
+  try {
+    const raw = fs.readFileSync(path.join(os.homedir(), ".config", "docforge", "config.toml"), "utf-8");
+    return raw.match(/^token\s*=\s*"([^"]+)"/m)?.[1] ?? "";
+  } catch { return ""; }
+}
+
+/** Returns Authorization header value: Bearer <jwt> from CLI, or empty string. */
+function getAuthHeader(): Record<string, string> {
+  // Prefer CLI JWT token (written after login) over legacy stored API key
+  const token = getCliToken();
+  if (token) return { "Authorization": `Bearer ${token}` };
+  const stored = vscode.workspace.getConfiguration("docforge").get<string>("apiKey", "");
+  if (stored) return { "X-API-Key": stored };
+  return {};
+}
+
+/**
+ * Login with email + password. Returns access_token and email.
+ */
+export async function loginWithPassword(
+  email: string,
+  password: string
+): Promise<{ access_token: string; email: string }> {
+  const url = `${getBackendUrl()}/api/auth/login`;
+  const body = JSON.stringify({ email, password });
+  const data = await httpPostPublic(url, body);
+  return data as { access_token: string; email: string };
+}
+
+/**
+ * Register a new account. Returns access_token and email.
+ */
+export async function registerUser(
+  email: string,
+  password: string,
+  geminiKey?: string,
+  groqKey?: string
+): Promise<{ access_token: string; email: string }> {
+  const url = `${getBackendUrl()}/api/auth/register`;
+  const body = JSON.stringify({
+    email,
+    password,
+    gemini_key: geminiKey || null,
+    groq_key: groqKey || null,
+  });
+  const data = await httpPostPublic(url, body);
+  return data as { access_token: string; email: string };
 }
 
 /**
@@ -166,7 +214,7 @@ function httpPost(url: string, body: string): Promise<unknown> {
       headers: {
         "Content-Type": "application/json",
         "Content-Length": Buffer.byteLength(body),
-        ...(getApiKey() ? { "X-API-Key": getApiKey() } : {}),
+        ...getAuthHeader(),
       },
     };
 
@@ -198,6 +246,49 @@ function httpPost(url: string, body: string): Promise<unknown> {
   });
 }
 
+/** httpPostPublic — like httpPost but never adds auth headers (for login/register). */
+function httpPostPublic(url: string, body: string): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const options = {
+      hostname: parsed.hostname,
+      port: parsed.port || (parsed.protocol === "https:" ? 443 : 80),
+      path: parsed.pathname + parsed.search,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(body),
+      },
+    };
+
+    const lib = parsed.protocol === "https:" ? https : http;
+    const req = lib.request(options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => (data += chunk));
+      res.on("end", () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (res.statusCode && res.statusCode >= 400) {
+            reject(new Error(`HTTP ${res.statusCode}: ${(parsed as { detail?: string }).detail ?? data}`));
+          } else {
+            resolve(parsed);
+          }
+        } catch {
+          reject(new Error(`Invalid JSON response: ${data.slice(0, 200)}`));
+        }
+      });
+    });
+
+    req.on("error", reject);
+    req.setTimeout(30_000, () => {
+      req.destroy();
+      reject(new Error("Request timeout (30s)"));
+    });
+    req.write(body);
+    req.end();
+  });
+}
+
 function httpGet(url: string): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const parsed = new URL(url);
@@ -207,7 +298,7 @@ function httpGet(url: string): Promise<unknown> {
       path: parsed.pathname + parsed.search,
       method: "GET",
       headers: {
-        ...(getApiKey() ? { "X-API-Key": getApiKey() } : {}),
+        ...getAuthHeader(),
       },
     };
 

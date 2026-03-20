@@ -2,6 +2,14 @@
 
 This document tracks ideas and features intentionally deferred to keep the current implementation focused and clean.
 
+**Already implemented (not listed here):**
+- Google + GitHub OAuth in backend, VS Code extension sidebar, and web UI
+- Email/password registration and login
+- JWT auth shared between the VS Code extension and CLI via `~/.config/docforge/config.toml`
+- VS Code sidebar panel with auth, health check, and API key management
+- Rust CLI with npm distribution and per-platform binary packages
+- Gemini 2.0 Flash → Groq LLaMA 3.3 70B fallback chain
+
 ---
 
 ## 1. No-API Local Parsing (Zero API Key Mode)
@@ -17,13 +25,12 @@ Most popular packages ship with typed declarations. We can extract full API stru
 
 **Why deferred:** This is a full AST pipeline in a separate language. High value, but it's a separate product decision (do we want to be deterministic + zero-cost, or AI-flexible + supports untyped packages). Both can coexist — try AST first, fall back to AI if no types found.
 
-**Where this changes the architecture:** Rust CLI wins this race. CPU-bound parsing, no network wait, no API quota. Could be the core engine with the Python backend as orchestrator.
+**Where this changes the architecture:** The Rust CLI wins this race. CPU-bound parsing, no network wait, no API quota. Could be the core engine with the Python backend as orchestrator.
 
 ---
 
 ## 2. Frontend Design Overhaul
 
-- Full dark/light theme with proper design system (Radix, shadcn/ui)
 - Dashboard: grid view of all generated contexts with search + filter
 - Per-library detail page: interactive component explorer, props table, usage examples inline
 - History timeline: see how a library's API changed across versions
@@ -31,7 +38,7 @@ Most popular packages ship with typed declarations. We can extract full API stru
 
 ---
 
-## 3. CLI Design Improvements
+## 3. CLI Improvements
 
 - `dcf diff react@17 react@18` — show what changed between two versions
 - `dcf update` — re-generate all packages in `.context.md` that have newer versions
@@ -43,11 +50,10 @@ Most popular packages ship with typed declarations. We can extract full API stru
 
 ---
 
-## 4. VSCode Extension Improvements
+## 4. VS Code Extension Improvements
 
 - Inline hover docs: hover over an import and see the DocForge context inline
 - Auto-detect `package.json` changes and offer to regenerate
-- Sidebar panel showing all generated contexts for the current project
 - Snippet injection: right-click a component → "Insert usage example"
 - Works without a backend (offline mode via local parsing, see item 1)
 
@@ -74,6 +80,7 @@ Most popular packages ship with typed declarations. We can extract full API stru
 - Ambiguous package names (e.g. `phoenix` — is it Elixir Hex or an npm package?): show a picker
 - `dcf search rails` — show all registries that have a package with that name
 - Lockfile parsing: read `Cargo.lock`, `Gemfile.lock`, `pubspec.lock`, `packages.lock.json` (not just `package.json`)
+- JSR (JavaScript Registry) ingester for Deno/modern packages
 
 ---
 
@@ -92,6 +99,7 @@ Most popular packages ship with typed declarations. We can extract full API stru
 - CLI usage analytics dashboard (opt-in)
 - Private registry support (GitHub Packages, JFrog Artifactory, private npm)
 - SOC 2 / GDPR compliance for enterprise
+- GitHub Action: auto-generate `.context.md` on every `package.json` change in CI
 
 ---
 
@@ -99,4 +107,4 @@ Most popular packages ship with typed declarations. We can extract full API stru
 
 - `dcf correct react@18 Button` — flag an incorrect extraction, submit fix
 - Community-verified contexts (crowdsourced corrections merged into shared cache)
-- GitHub Action: auto-generate `.context.md` on every `package.json` change in CI
+- Public corrections web UI — browse and submit doc corrections without CLI
