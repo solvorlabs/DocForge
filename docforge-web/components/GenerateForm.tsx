@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { createJob } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { Package, Globe, Github, FileText, Box, Loader2 } from 'lucide-react';
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function GenerateForm({ onJobCreated }: Props) {
+  const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('npm');
@@ -26,7 +28,7 @@ export function GenerateForm({ onJobCreated }: Props) {
     setLoading(true);
     setError('');
     try {
-      const { job_id } = await createJob(input, activeTab);
+      const { job_id } = await createJob(input, activeTab, token);
       onJobCreated(job_id, input);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to start job');
