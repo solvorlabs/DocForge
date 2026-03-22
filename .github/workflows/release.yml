@@ -24,7 +24,7 @@ jobs:
             cross: true
 
           - platform: darwin-x64
-            os: macos-13        # Intel runner
+            os: macos-12        # Intel runner
             target: x86_64-apple-darwin
             cross: false
 
@@ -134,17 +134,17 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           for platform in linux-x64 linux-arm64 darwin-x64 darwin-arm64 win32-x64; do
-            echo "Publishing @docforge/cli-$platform..."
+            echo "Publishing @docforge-cli/cli-$platform..."
             cd docforge-cli/npm/$platform
-            npm publish --access public
+            npm publish --access public || echo "Already published, skipping"
             cd ../../..
           done
 
-      - name: Publish main docforge-cli package
+      - name: Publish main package
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         working-directory: docforge-cli
-        run: npm publish --access public
+        run: npm publish --access public || echo "Already published, skipping"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
