@@ -1,5 +1,5 @@
 {
-  "name": "@docforge/cli-darwin-arm64",
+  "name": "@docforge-cli/cli-darwin-arm64",
   "version": "1.0.0",
   "description": "DocForge CLI binary for macOS arm64 (Apple Silicon)",
   "os": ["darwin"],

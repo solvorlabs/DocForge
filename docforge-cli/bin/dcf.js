@@ -6,11 +6,11 @@ const path = require("path");
 const fs = require("fs");
 
 const PLATFORM_PACKAGES = {
-  "linux-x64":    "@docforge/cli-linux-x64",
-  "linux-arm64":  "@docforge/cli-linux-arm64",
-  "darwin-x64":   "@docforge/cli-darwin-x64",
-  "darwin-arm64": "@docforge/cli-darwin-arm64",
-  "win32-x64":    "@docforge/cli-win32-x64",
+  "linux-x64":    "@docforge-cli/cli-linux-x64",
+  "linux-arm64":  "@docforge-cli/cli-linux-arm64",
+  "darwin-x64":   "@docforge-cli/cli-darwin-x64",
+  "darwin-arm64": "@docforge-cli/cli-darwin-arm64",
+  "win32-x64":    "@docforge-cli/cli-win32-x64",
 };
 
 function getRustBinary() {
