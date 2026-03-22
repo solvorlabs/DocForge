@@ -26,7 +26,7 @@ impl Config {
         std::env::var("DOCFORGE_API")
             .ok()
             .or_else(|| self.api_url.clone())
-            .unwrap_or_else(|| "http://localhost:8000".to_string())
+            .unwrap_or_else(|| "https://solvorlabs-docforge-api.hf.space".to_string())
     }
 }
 

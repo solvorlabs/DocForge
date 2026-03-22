@@ -72,6 +72,8 @@ Most popular packages ship with typed declarations. We can extract full API stru
 - Global shared cache: if anyone already generated `react@18`, everyone benefits (opt-in)
 - Redis-backed cache with TTL per package (popular packages cached longer)
 - Pre-baked contexts for the top 500 npm packages — instant response, no crawling
+- Crawl depth/breadth controls: currently hard-capped at 15 pages — large libraries like antd (60+ components) need 100+ pages to get meaningful coverage
+- Smarter page prioritization: rank crawled pages by relevance (component API pages > blog posts > changelogs) so the 80k token budget goes to the right content
 
 ---
 
@@ -90,6 +92,9 @@ Most popular packages ship with typed declarations. We can extract full API stru
 - Multi-model consensus: run Gemini + GPT-4o on the same docs, merge the best output
 - Fine-tuned model specifically for API doc extraction (much cheaper than general LLM)
 - Confidence scores per component: flag components where AI was uncertain
+- Chunked structuring for large libraries: instead of truncating to 80k chars, split docs into N chunks → extract components from each → merge into one context file (antd, MUI, etc. need this)
+- GitHub source crawl as primary ingestion for JS-heavy doc sites (e.g. ant.design is React-rendered — Playwright gets generic pages, not per-component API docs; the GitHub repo's `docs/` or TypeScript `.d.ts` files are far richer)
+- Output quality scoring: auto-detect when a generated context is too sparse (e.g. fewer than 5 components for a known large library) and trigger a deeper re-crawl automatically
 
 ---
 
