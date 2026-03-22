@@ -1,13 +1,27 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Code2 } from 'lucide-react';
 import { GenerateForm } from '@/components/GenerateForm';
 import { JobStatus } from '@/components/JobStatus';
+import { useAuth } from '@/lib/auth-context';
 
 export default function GeneratePage() {
+  const router = useRouter();
+  const { token, user } = useAuth();
   const [jobId, setJobId] = useState<string | null>(null);
   const [library, setLibrary] = useState('');
+
+  if (!token || !user) {
+    router.replace('/auth/login');
+    return null;
+  }
+
+  if (!user.has_gemini_key) {
+    router.replace('/settings');
+    return null;
+  }
 
   const handleJobCreated = (id: string, lib: string) => {
     setJobId(id);

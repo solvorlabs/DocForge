@@ -76,6 +76,19 @@ async def create_context_job(
         gemini_key = request.gemini_key or None
         groq_key   = request.groq_key or None
 
+    # Enforce user-supplied key — DocForge does not maintain a server-level key.
+    # DEV_MODE bypasses this so local dev works without a key configured.
+    import os as _os
+    if not gemini_key and not _os.getenv("DEV_MODE", "false").lower() == "true":
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Gemini API key required. "
+                "Get a free key at https://aistudio.google.com/app/apikey "
+                "then add it in DocForge Settings."
+            ),
+        )
+
     job_id = str(uuid.uuid4())
 
     # Store initial job state
