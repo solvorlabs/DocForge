@@ -24,7 +24,7 @@ jobs:
             cross: true
 
           - platform: darwin-x64
-            os: macos-12        # Intel runner
+            os: macos-latest
             target: x86_64-apple-darwin
             cross: false
 
