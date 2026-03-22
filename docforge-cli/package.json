@@ -19,11 +19,11 @@
   "files": ["bin/", "ascii-art.txt"],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Shivoo29/docforge"
+    "url": "https://github.com/solvorlabs/DocForge"
   },
-  "homepage": "https://github.com/Shivoo29/docforge#readme",
+  "homepage": "https://github.com/solvorlabs/DocForge#readme",
   "bugs": {
-    "url": "https://github.com/Shivoo29/docforge/issues"
+    "url": "https://github.com/solvorlabs/DocForge/issues"
   }
 }
 
