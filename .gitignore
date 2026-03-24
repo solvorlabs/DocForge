@@ -1,0 +1,38 @@
+# Rust
+docforge-cli/target
+Cargo.lock
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.claude/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+myenv
+# Environment
+.env
+.env.local
+.vscode/
+
+# Node.js / VS Code Extension
+node_modules/
+out/
+*.vsix
+.vscode-test/
+
+# OS
+.DS_Store
+Thumbs.db
+.claude
+
+# IDE
+.idea/
+*.swp
+*.swo
+~/

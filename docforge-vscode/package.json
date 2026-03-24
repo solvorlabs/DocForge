@@ -1,0 +1,139 @@
+{
+  "name": "docforge",
+  "displayName": "DocForge",
+  "description": "Turn any library's documentation into a prompt-ready .context.md file, pinned to the exact version you're using.",
+  "version": "1.0.0",
+  "publisher": "docforge",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/docforge/docforge-vscode"
+  },
+  "icon": "media/image.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "AI",
+    "Snippets"
+  ],
+  "keywords": [
+    "ai",
+    "documentation",
+    "context",
+    "llm",
+    "copilot",
+    "cursor"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onUri"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "docforge-sidebar",
+          "title": "DocForge",
+          "icon": "media/docforge.svg"
+        }
+      ]
+    },
+    "views": {
+      "docforge-sidebar": [
+        {
+          "type": "webview",
+          "id": "docforge.sidebarView",
+          "name": "DocForge",
+          "icon": "media/image.png"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "docforge.openPanel",
+        "title": "DF: Open Panel",
+        "icon": "media/image.png"
+      },
+      {
+        "command": "docforge.generateContext",
+        "title": "DF: Generate Context File"
+      },
+      {
+        "command": "docforge.generateFromSelection",
+        "title": "DF: Generate Context for Selected Package"
+      },
+      {
+        "command": "docforge.updateContext",
+        "title": "DF: Update Existing Context"
+      },
+      {
+        "command": "docforge.detectDependencies",
+        "title": "DF: Detect from package.json"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "docforge.generateFromSelection",
+          "when": "editorHasSelection",
+          "group": "docforge"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "DocForge",
+      "properties": {
+        "docforge.backendUrl": {
+          "type": "string",
+          "default": "https://api.docforge.dev",
+          "description": "DocForge backend URL. Change to http://localhost:8000 for local development."
+        },
+        "docforge.outputPath": {
+          "type": "string",
+          "default": ".context.md",
+          "description": "Path relative to workspace root where context file is written."
+        },
+        "docforge.autoOpenFile": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically open the generated context file after creation."
+        },
+        "docforge.autoInjectCursor": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically inject the generated context into .cursor/rules/ for use with Cursor AI (only runs if .cursor/ exists in the workspace)."
+        },
+        "docforge.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your DocForge API key. Can also be set directly in the sidebar panel."
+        },
+        "docforge.webUrl": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "DocForge web app URL. Used for the Login / Get API Key button in the sidebar. Change to https://docforge.dev for production."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vscode/test-electron": "^2.3.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.4.0"
+  }
+}

@@ -1,0 +1,152 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  # ── Build native binaries for all 5 platforms ──────────────────────────────
+  build:
+    name: Build ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            cross: false
+
+          - platform: linux-arm64
+            os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            cross: true
+
+          - platform: darwin-x64
+            os: macos-latest
+            target: x86_64-apple-darwin
+            cross: false
+
+          - platform: darwin-arm64
+            os: macos-latest    # Apple Silicon runner
+            target: aarch64-apple-darwin
+            cross: false
+
+          - platform: win32-x64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            cross: false
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install musl tools (Linux x64)
+        if: matrix.platform == 'linux-x64'
+        run: sudo apt-get install -y musl-tools
+
+      - name: Install cross (Linux arm64)
+        if: matrix.cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Build (cross)
+        if: matrix.cross
+        working-directory: docforge-cli
+        run: cross build --release --target ${{ matrix.target }}
+
+      - name: Build (native)
+        if: "!matrix.cross"
+        working-directory: docforge-cli
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Stage binary (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          mkdir -p docforge-cli/npm/${{ matrix.platform }}/bin
+          cp docforge-cli/target/${{ matrix.target }}/release/dcf \
+             docforge-cli/npm/${{ matrix.platform }}/bin/dcf
+          chmod +x docforge-cli/npm/${{ matrix.platform }}/bin/dcf
+
+      - name: Stage binary (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          New-Item -ItemType Directory -Force -Path docforge-cli/npm/${{ matrix.platform }}/bin
+          Copy-Item "docforge-cli/target/${{ matrix.target }}/release/dcf.exe" `
+                    "docforge-cli/npm/${{ matrix.platform }}/bin/dcf.exe"
+        shell: pwsh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bin-${{ matrix.platform }}
+          path: docforge-cli/npm/${{ matrix.platform }}/bin/
+
+  # ── Publish all npm packages ───────────────────────────────────────────────
+  publish:
+    name: Publish to npm
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Download all binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Place binaries into platform packages
+        run: |
+          for platform in linux-x64 linux-arm64 darwin-x64 darwin-arm64 win32-x64; do
+            mkdir -p docforge-cli/npm/$platform/bin
+            cp -r artifacts/bin-$platform/. docforge-cli/npm/$platform/bin/ 2>/dev/null || true
+            chmod +x docforge-cli/npm/$platform/bin/dcf 2>/dev/null || true
+          done
+
+      - name: Set version from tag
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          # Update all package.json versions
+          for platform in linux-x64 linux-arm64 darwin-x64 darwin-arm64 win32-x64; do
+            jq --arg v "$VERSION" '.version = $v' \
+               docforge-cli/npm/$platform/package.json > tmp.json \
+               && mv tmp.json docforge-cli/npm/$platform/package.json
+          done
+          jq --arg v "$VERSION" '
+            .version = $v |
+            .optionalDependencies |= with_entries(.value = $v)
+          ' docforge-cli/package.json > tmp.json && mv tmp.json docforge-cli/package.json
+
+      - name: Publish platform packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          for platform in linux-x64 linux-arm64 darwin-x64 darwin-arm64 win32-x64; do
+            echo "Publishing @docforge-cli/cli-$platform..."
+            cd docforge-cli/npm/$platform
+            npm publish --access public || echo "Already published, skipping"
+            cd ../../..
+          done
+
+      - name: Publish main package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        working-directory: docforge-cli
+        run: npm publish --access public || echo "Already published, skipping"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
