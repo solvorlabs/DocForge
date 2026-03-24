@@ -21,7 +21,12 @@ export const metadata: Metadata = {
   title: "DocForge — AI-ready context files for any library",
   description: "Generate prompt-ready .context.md files pinned to your exact library version.",
   icons: {
-    icon: "/docforge.png",
+    icon: [
+      { url: "/favicon.ico", type: "image/x-icon" },
+      { url: "/docforge.png", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/docforge.png",
   },
 };
 
