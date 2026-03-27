@@ -31,7 +31,7 @@ const rustBin = getRustBinary();
 
 if (rustBin) {
   const result = spawnSync(rustBin, process.argv.slice(2), { stdio: "inherit" });
-  process.exit(result.status ?? 0);
+  process.exit(result.status != null ? result.status : 0);
 } else {
   console.error(
     "\n  ✗ DocForge native binary not found for your platform.\n" +
