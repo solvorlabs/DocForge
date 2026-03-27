@@ -1,6 +1,6 @@
 {
   "name": "@docforge-cli/cli",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Generate prompt-ready context files for any library — pinned to your exact version.",
   "bin": {
     "dcf": "./bin/dcf.js"
@@ -10,11 +10,11 @@
   "engines": { "node": ">=18" },
   "dependencies": {},
   "optionalDependencies": {
-    "@docforge-cli/cli-linux-x64":    "1.2.0",
-    "@docforge-cli/cli-linux-arm64":  "1.2.0",
-    "@docforge-cli/cli-darwin-x64":   "1.2.0",
-    "@docforge-cli/cli-darwin-arm64": "1.2.0",
-    "@docforge-cli/cli-win32-x64":    "1.2.0"
+    "@docforge-cli/cli-linux-x64":    "1.2.1",
+    "@docforge-cli/cli-linux-arm64":  "1.2.1",
+    "@docforge-cli/cli-darwin-x64":   "1.2.1",
+    "@docforge-cli/cli-darwin-arm64": "1.2.1",
+    "@docforge-cli/cli-win32-x64":    "1.2.1"
   },
   "files": ["bin/", "ascii-art.txt"],
   "repository": {
