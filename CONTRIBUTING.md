@@ -6,9 +6,178 @@ Thanks for wanting to contribute. This document covers how to get your environme
 
 ## Before You Start
 
-- Read [README.md](README.md) for the local quickstart
-- Check the [open issues](https://github.com/docforge/docforge/issues) before starting work on a new feature — someone may already be on it
+- Check the [open issues](https://github.com/solvorlabs/DocForge/issues) before starting work on a new feature — someone may already be on it
 - For large changes, open an issue first to discuss the approach before writing code
+
+---
+
+## Local Dev Setup
+
+You don't need to run all five components. Run only what you're changing — everything else can point at production.
+
+### Prerequisites
+
+| Tool | Version | Used by |
+|------|---------|---------|
+| Python | 3.12+ | backend, MCP server |
+| Node.js | 18+ | web UI, VS Code extension |
+| Rust + Cargo | stable | CLI |
+| npm | 9+ | web UI, CLI wrapper |
+
+### 1. Clone
+
+```bash
+git clone https://github.com/solvorlabs/DocForge
+cd DocForge
+```
+
+---
+
+### Backend (FastAPI)
+
+The backend is required by everything. Start here.
+
+```bash
+python -m venv .venv
+
+# macOS / Linux
+source .venv/bin/activate
+
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
+
+pip install -r backend/requirements.txt
+playwright install chromium --with-deps
+```
+
+Create `backend/.env`:
+
+```env
+# Required
+GEMINI_API_KEY=your_gemini_key_here
+SECRET_KEY=any_random_string_at_least_32_chars
+
+# Local dev — disables Supabase, uses in-memory cache
+DEV_MODE=true
+
+# URLs — must match what you're running locally
+BACKEND_URL=http://localhost:8000
+FRONTEND_URL=http://localhost:3000
+
+# Optional — Groq is the AI fallback when Gemini hits quota
+GROQ_API_KEY=your_groq_key_here
+
+# Optional — only needed if testing OAuth login locally
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
+```
+
+Start:
+
+```bash
+uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Health check: `http://localhost:8000/api/health`
+
+> **DEV_MODE=true** skips Supabase entirely and uses an in-memory dict for caching. You don't need a Supabase account to run locally.
+
+---
+
+### Web UI (Next.js)
+
+```bash
+cd docforge-web
+npm install
+```
+
+Create `docforge-web/.env.local`:
+
+```env
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+```
+
+```bash
+npm run dev
+# Runs at http://localhost:3000
+```
+
+---
+
+### CLI (Rust)
+
+```bash
+cd docforge-cli
+cargo build                          # debug build
+cargo build --release                # release build (slower, smaller binary)
+```
+
+Run without installing globally:
+
+```bash
+# From the docforge-cli directory
+DOCFORGE_API=http://localhost:8000 cargo run -- generate react@18.2.0
+DOCFORGE_API=http://localhost:8000 cargo run -- detect
+```
+
+Or install the local build globally:
+
+```bash
+cargo install --path .
+export DOCFORGE_API=http://localhost:8000
+dcf generate react@18.2.0
+```
+
+---
+
+### VS Code Extension (TypeScript)
+
+```bash
+cd docforge-vscode
+npm install
+npm run compile      # one-off build
+npm run watch        # TypeScript watch mode (use while developing)
+```
+
+To launch the extension in a VS Code development window:
+
+1. Open the `docforge-vscode/` folder in VS Code
+2. Press `F5` — this opens a new **Extension Development Host** window with the extension loaded
+3. In that window, open Command Palette → type `DocForge`
+
+Point the extension at your local backend via VS Code settings (`Ctrl+,`):
+
+```
+docforge.backendUrl = http://localhost:8000
+```
+
+---
+
+### MCP Server (Python)
+
+```bash
+cd docforge-mcp
+pip install -r requirements.txt      # if there's a requirements.txt
+python server.py
+```
+
+To use with Claude Desktop, add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "docforge": {
+      "command": "python",
+      "args": ["/absolute/path/to/DocForge/docforge-mcp/server.py"],
+      "env": {
+        "DOCFORGE_API": "http://localhost:8000"
+      }
+    }
+  }
+}
+```
 
 ---
 
@@ -126,7 +295,65 @@ For web UI changes:
 make dev-web         # Next.js with Turbopack at http://localhost:3000
 ```
 
-### 4. Test your changes
+### 4. Point clients at your local backend
+
+**Never change hardcoded URLs in source files.** All clients support pointing at a local backend through config — no source edits needed, nothing to accidentally commit or revert.
+
+#### CLI
+
+```bash
+export DOCFORGE_API=http://localhost:8000
+dcf generate react@18.2.0
+dcf detect
+```
+
+Unset the variable when you're done: `unset DOCFORGE_API`. The CLI falls back to production automatically.
+
+You can also write it permanently to your local config file (`~/.config/docforge/config.toml`):
+
+```toml
+api_url = "http://localhost:8000"
+```
+
+Remove that line before raising a PR — config files are gitignored so this won't leak into the repo.
+
+#### VS Code extension
+
+In VS Code settings (`Ctrl+,`), search for **DocForge** and set:
+
+```
+docforge.backendUrl = http://localhost:8000
+```
+
+Or add to your personal `.vscode/settings.json` (not tracked in this repo):
+
+```json
+{
+  "docforge.backendUrl": "http://localhost:8000"
+}
+```
+
+This file is gitignored. Do not add it to `.vscode/settings.json` at the repo root — that file is committed.
+
+#### Web UI
+
+The web UI already defaults to `http://localhost:8000` in development. Create `docforge-web/.env.local` (gitignored):
+
+```env
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+```
+
+If you want to test the web UI against production instead:
+
+```env
+NEXT_PUBLIC_BACKEND_URL=https://solvorlabs-docforge-api.hf.space
+```
+
+Never edit `docforge-web/lib/api.ts` directly to change the URL — the env var is the right mechanism.
+
+---
+
+### 5. Test your changes
 
 **Backend** — test the full pipeline with real packages:
 
@@ -161,6 +388,7 @@ curl -X POST http://localhost:8000/api/auth/login \
 **CLI** — test from a project directory with a `package.json`:
 
 ```bash
+export DOCFORGE_API=http://localhost:8000
 cd /tmp/test-project
 dcf generate react@18.2.0
 dcf detect
@@ -172,7 +400,7 @@ dcf detect
 make compile-extension
 ```
 
-### 5. Commit
+### 6. Commit
 
 Write commit messages in the imperative present tense:
 
@@ -185,7 +413,7 @@ refactor: extract polling logic from generateContext command
 
 One logical change per commit. Do not bundle unrelated fixes.
 
-### 6. Open a pull request
+### 7. Open a pull request
 
 - Target the `main` branch
 - Title follows the same format as commit messages
@@ -298,4 +526,4 @@ Include:
 
 ## Questions
 
-Open a [GitHub Discussion](https://github.com/docforge/docforge/discussions) for anything that is not a bug or a concrete feature request.
+Open a [GitHub Discussion](https://github.com/solvorlabs/DocForge/discussions) for anything that is not a bug or a concrete feature request.
