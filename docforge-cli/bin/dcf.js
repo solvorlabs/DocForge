@@ -36,7 +36,7 @@ if (rustBin) {
   console.error(
     "\n  ✗ DocForge native binary not found for your platform.\n" +
     "  Try reinstalling: npm install -g docforge-cli\n" +
-    "  Or download a binary from: https://github.com/solvorlabs/docforge/releases\n"
+    "  Or download a binary from: https://github.com/solvorlabs/DocForge/releases\n"
   );
   process.exit(1);
 }

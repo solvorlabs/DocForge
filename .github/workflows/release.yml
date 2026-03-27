@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish (e.g. 1.2.0) — only used if not triggered by a tag"
+        required: false
+        default: ""
 
 jobs:
   # ── Build native binaries for all 5 platforms ──────────────────────────────
@@ -24,12 +30,12 @@ jobs:
             cross: true
 
           - platform: darwin-x64
-            os: macos-latest
+            os: macos-13        # last Intel runner — macos-latest is Apple Silicon now
             target: x86_64-apple-darwin
             cross: false
 
           - platform: darwin-arm64
-            os: macos-latest    # Apple Silicon runner
+            os: macos-latest    # macos-15, Apple Silicon (M1)
             target: aarch64-apple-darwin
             cross: false
 
@@ -54,7 +60,7 @@ jobs:
 
       - name: Install cross (Linux arm64)
         if: matrix.cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
+        run: cargo install cross --locked
 
       - name: Build (cross)
         if: matrix.cross
@@ -115,9 +121,17 @@ jobs:
             chmod +x docforge-cli/npm/$platform/bin/dcf 2>/dev/null || true
           done
 
-      - name: Set version from tag
+      - name: Set version
         run: |
-          VERSION=${GITHUB_REF_NAME#v}
+          # Use git tag if triggered by push, else use workflow_dispatch input, else read from package.json
+          if [[ "$GITHUB_REF_NAME" == v* ]]; then
+            VERSION=${GITHUB_REF_NAME#v}
+          elif [[ -n "${{ github.event.inputs.version }}" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION=$(jq -r '.version' docforge-cli/package.json)
+          fi
+          echo "Publishing version: $VERSION"
           # Update all package.json versions
           for platform in linux-x64 linux-arm64 darwin-x64 darwin-arm64 win32-x64; do
             jq --arg v "$VERSION" '.version = $v' \
