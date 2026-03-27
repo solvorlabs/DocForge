@@ -30,7 +30,7 @@ jobs:
             cross: true
 
           - platform: darwin-x64
-            os: macos-13        # last Intel runner — macos-latest is Apple Silicon now
+            os: macos-latest    # Apple Silicon runner, cross-compiles to x86_64
             target: x86_64-apple-darwin
             cross: false
 
